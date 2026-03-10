@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Eye, Edit2, CheckCircle } from 'lucide-react';
-import { getOrders, supabase } from '../../services/api';
+import { getOrders } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
