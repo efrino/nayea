@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
 import StoreLayout from './components/layout/StoreLayout';
 import Home from './pages/storefront/Home';
 import Catalog from './pages/storefront/Catalog';
@@ -17,28 +18,30 @@ import Chat from './pages/admin/Chat';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Storefront Routes */}
-        <Route path="/" element={<StoreLayout />}>
-          <Route index element={<Home />} />
-          <Route path="catalog" element={<Catalog />} />
-          <Route path="product/:id" element={<ProductDetail />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="checkout" element={<Checkout />} />
-        </Route>
+    <CartProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Storefront Routes */}
+          <Route path="/" element={<StoreLayout />}>
+            <Route index element={<Home />} />
+            <Route path="catalog" element={<Catalog />} />
+            <Route path="product/:id" element={<ProductDetail />} />
+            <Route path="cart" element={<Cart />} />
+            <Route path="checkout" element={<Checkout />} />
+          </Route>
 
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<Products />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="banners" element={<Banners />} />
-          <Route path="chat" element={<Chat />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<Login />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<Products />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="banners" element={<Banners />} />
+            <Route path="chat" element={<Chat />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </CartProvider>
   );
 }
 
