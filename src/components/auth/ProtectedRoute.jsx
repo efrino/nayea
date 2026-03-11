@@ -15,12 +15,14 @@ export default function ProtectedRoute({ children }) {
 
     const isAdmin = session?.user?.user_metadata?.role === 'admin';
 
-    if (!session || !isAdmin) {
-        // Redirect them to the /admin/login page, but save the current location they were
-        // trying to go to when they were redirected. This allows us to send them
-        // along to that page after they login, which is a nicer user experience
-        // than dropping them off on the home page.
+    if (!session) {
+        // Not logged in at all, send to admin login
         return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
+    }
+
+    if (!isAdmin) {
+        // Logged in, but not an admin (Customer). Send them back to the storefront.
+        return <Navigate to="/" replace />;
     }
 
     return children;

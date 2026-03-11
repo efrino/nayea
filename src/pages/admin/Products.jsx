@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Upload, XCircle, ArrowLeft, ArrowRight, Video } from 'lucide-react';
 import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile } from '../../services/api';
 
 export default function Products() {
@@ -14,8 +14,19 @@ export default function Products() {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
   const [isPreorder, setIsPreorder] = useState(false);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+
+  // Advanced Tokopedia-style Product Features
+  const [material, setMaterial] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [colors, setColors] = useState([]);
+  const [newColor, setNewColor] = useState('');
+
+  // Multi-Image Handling
+  const [mediaItems, setMediaItems] = useState([]); // Array of { isNew: boolean, url: string, file: File | null }
+
+  // Video Handling
+  const [videoFile, setVideoFile] = useState(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -32,11 +43,43 @@ export default function Products() {
   }
 
   const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      const newItems = files.map(file => ({
+        isNew: true,
+        url: URL.createObjectURL(file),
+        file: file
+      }));
+      setMediaItems(prev => [...prev, ...newItems]);
+    }
+  };
+
+  const removeImage = (indexToRemove) => {
+    setMediaItems(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const moveImage = (index, direction) => {
+    const newItems = [...mediaItems];
+    if (direction === 'left' && index > 0) {
+      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+      setMediaItems(newItems);
+    } else if (direction === 'right' && index < newItems.length - 1) {
+      [newItems[index + 1], newItems[index]] = [newItems[index], newItems[index + 1]];
+      setMediaItems(newItems);
+    }
+  };
+
+  const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      setVideoFile(file);
+      setVideoUrl(URL.createObjectURL(file));
     }
+  };
+
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoUrl('');
   };
 
   const handleOpenModal = (product = null) => {
@@ -47,8 +90,19 @@ export default function Products() {
       setPrice(product.price ? product.price.toString() : '');
       setStock(product.stock !== undefined ? product.stock.toString() : '0');
       setIsPreorder(product.is_preorder || false);
-      setImagePreview(product.image_url || '');
-      setImageFile(null);
+      setMaterial(product.material || '');
+      setVideoUrl(product.video_url || '');
+      setColors(product.colors || []);
+
+      // Legacy support for single image_url vs new images array
+      let existingImages = [];
+      if (product.images && product.images.length > 0) {
+        existingImages = product.images;
+      } else if (product.image_url) {
+        existingImages = [product.image_url];
+      }
+      setMediaItems(existingImages.map(url => ({ isNew: false, url, file: null })));
+      setVideoFile(null);
     } else {
       setEditId(null);
       setName('');
@@ -56,9 +110,14 @@ export default function Products() {
       setPrice('');
       setStock('0');
       setIsPreorder(false);
-      setImagePreview('');
-      setImageFile(null);
+      setMaterial('');
+      setVideoUrl('');
+      setColors([]);
+
+      setMediaItems([]);
+      setVideoFile(null);
     }
+    setNewColor('');
     setIsModalOpen(true);
   };
 
@@ -67,27 +126,46 @@ export default function Products() {
     setIsSubmitting(true);
 
     try {
-      let imageUrl = null;
+      // 1. Upload NEW images and video in parallel
+      const uploadPromises = mediaItems.map(item => {
+        if (item.isNew && item.file) {
+          return uploadFile(item.file, 'products').then(res => {
+            if (res.error) throw res.error;
+            return res.url;
+          });
+        }
+        return Promise.resolve(item.url); // keep existing URL
+      });
 
-      // 1. Upload image if exists
-      if (imageFile) {
-        const { url, error: uploadError } = await uploadFile(imageFile, 'products');
-        if (uploadError) throw uploadError;
-        imageUrl = url;
+      let finalVideoUrl = videoUrl;
+      if (videoFile) {
+        uploadPromises.push(
+          uploadFile(videoFile, 'products').then(res => {
+            if (res.error) throw res.error;
+            finalVideoUrl = res.url;
+            return 'VIDEO_UPLOAD'; // marker flag
+          })
+        );
       }
 
-      // 2. Save product to database
+      const uploadResults = await Promise.all(uploadPromises);
+
+      // Separate image URLs from the video marker if it exists
+      const finalImageArray = videoFile ? uploadResults.slice(0, -1) : uploadResults;
+
+      // 2. Save product to database with advanced fields
       const productData = {
         name,
         description,
         price: parseFloat(price),
         stock: parseInt(stock, 10) || 0,
         is_preorder: isPreorder,
+        material,
+        video_url: videoFile ? finalVideoUrl : videoUrl,
+        colors,
+        images: finalImageArray,
+        image_url: finalImageArray.length > 0 ? finalImageArray[0] : null // Keep backwards compatibility with old UI if needed
       };
-
-      if (imageUrl) {
-        productData.image_url = imageUrl;
-      }
 
       let error;
       if (editId) {
@@ -100,7 +178,6 @@ export default function Products() {
 
       if (error) throw error;
 
-      // Reset form & fetch updated data
       closeModal();
       fetchProducts();
 
@@ -130,8 +207,23 @@ export default function Products() {
     setPrice('');
     setStock('0');
     setIsPreorder(false);
-    setImageFile(null);
-    setImagePreview('');
+    setMaterial('');
+    setVideoUrl('');
+    setColors([]);
+    setNewColor('');
+    setMediaItems([]);
+    setVideoFile(null);
+  };
+
+  const addColor = () => {
+    if (newColor.trim() && !colors.includes(newColor.trim())) {
+      setColors([...colors, newColor.trim()]);
+      setNewColor('');
+    }
+  };
+
+  const removeColor = (colorToRemove) => {
+    setColors(colors.filter(c => c !== colorToRemove));
   };
 
   const formatPrice = (price) => {
@@ -231,33 +323,63 @@ export default function Products() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Image Upload */}
+                {/* Multi-Image Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Product Image</label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md relative overflow-hidden">
-                    {imagePreview ? (
-                      <div className="relative w-full">
-                        <img src={imagePreview} alt="Preview" className="mx-auto h-32 object-contain" />
-                        <button
-                          type="button"
-                          onClick={() => { setImageFile(null); setImagePreview(''); }}
-                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 transform translate-x-2 -translate-y-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1 text-center">
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <div className="flex text-sm text-gray-600 justify-center">
-                          <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                            <span>Upload a file</span>
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} required />
-                          </label>
-                        </div>
-                        <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                      </div>
-                    )}
+                  <label className="block text-sm font-medium text-gray-700">Product Images (Gallery)</label>
+                  <p className="text-xs text-gray-500 mb-2">Urutan dapat diatur. Gambar pertama akan menjadi cover.</p>
+                  <div className="mt-1 flex flex-col items-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md relative">
+                    <div className="flex flex-wrap justify-center gap-4 mb-4">
+                      {mediaItems.length > 0 ? (
+                        mediaItems.map((item, idx) => (
+                          <div key={idx} className="relative w-28 h-28 border rounded-md bg-white group shadow-sm transition-all hover:shadow-md">
+                            <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded z-10 font-bold">
+                              {idx + 1}
+                            </span>
+                            <img src={item.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded-md" />
+
+                            {/* Overlay Controls */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1 rounded-md">
+                              <div className="flex justify-between">
+                                <button
+                                  type="button"
+                                  onClick={() => moveImage(idx, 'left')}
+                                  disabled={idx === 0}
+                                  className={`p-1 bg-white/90 rounded text-gray-800 transition-colors ${idx === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:text-blue-600'}`}
+                                >
+                                  <ArrowLeft className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveImage(idx, 'right')}
+                                  disabled={idx === mediaItems.length - 1}
+                                  className={`p-1 bg-white/90 rounded text-gray-800 transition-colors ${idx === mediaItems.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:text-blue-600'}`}
+                                >
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeImage(idx)}
+                                className="self-center p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500">No images uploaded yet.</div>
+                      )}
+                    </div>
+                    <div className="flex text-sm text-gray-600 justify-center">
+                      <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                        <span className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors">
+                          <Upload className="w-4 h-4" /> Tambah Gambar
+                        </span>
+                        <input id="file-upload" name="file-upload" type="file" multiple className="sr-only" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">PNG, JPG, WEBP up to 5MB.</p>
                   </div>
                 </div>
 
@@ -271,6 +393,57 @@ export default function Products() {
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
                   <textarea id="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
+                </div>
+
+                {/* Video Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Real-Pict Video (Optional)</label>
+                  <div className="mt-1 flex items-center gap-4">
+                    {videoUrl ? (
+                      <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 border rounded-md w-full justify-between">
+                        <div className="flex items-center gap-2 text-sm text-gray-700 truncate">
+                          <Video className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          <span className="truncate">{videoFile ? videoFile.name : 'Existing Video Uploaded'}</span>
+                        </div>
+                        <button type="button" onClick={removeVideo} className="text-red-500 hover:text-red-700 p-1">
+                          <XCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full flex items-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-md relative bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <label htmlFor="video-upload" className="relative cursor-pointer w-full text-center flex flex-col items-center">
+                          <Video className="w-8 h-8 text-gray-400 mb-2" />
+                          <span className="text-sm font-medium text-blue-600 hover:text-blue-500">Pilih File Video MP4/WEBM</span>
+                          <p className="text-xs text-gray-500 mt-1">Maksimal 50MB.</p>
+                          <input id="video-upload" name="video-upload" type="file" className="sr-only" accept="video/mp4,video/webm" onChange={handleVideoChange} />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Material */}
+                <div>
+                  <label htmlFor="material" className="block text-sm font-medium text-gray-700">Material / Fabric (Optional)</label>
+                  <input type="text" id="material" placeholder="e.g., Premium Ceruty Babydoll" value={material} onChange={(e) => setMaterial(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
+                </div>
+
+                {/* Colors Manager */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Color Variants</label>
+                  <div className="flex gap-2">
+                    <input type="text" value={newColor} onChange={(e) => setNewColor(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }} placeholder="e.g., Hitam, Maroon" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
+                    <button type="button" onClick={addColor} className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none">Add</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {colors.map((color, idx) => (
+                      <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {color}
+                        <button type="button" onClick={() => removeColor(color)} className="ml-1.5 inline-flex items-center justify-center text-blue-400 hover:text-blue-500 focus:outline-none"><XCircle className="w-4 h-4" /></button>
+                      </span>
+                    ))}
+                    {colors.length === 0 && <span className="text-xs text-gray-500 italic">No color variants added.</span>}
+                  </div>
                 </div>
 
                 {/* Price & Stock Row */}

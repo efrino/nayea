@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getProducts, getBanners } from '../../services/api';
 
+// Check if the URL is an HTML5 video format that needs a <video> tag to loop
+const isVideoUrl = (url) => {
+  if (!url) return false;
+  const lower = url.split('?')[0].toLowerCase();
+  return lower.endsWith('.mp4') || lower.endsWith('.webm');
+};
+
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [banners, setBanners] = useState([]);
@@ -42,11 +49,23 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative bg-primary-dark group">
         <div className="absolute inset-0 overflow-hidden transition-all duration-1000">
-          <img
-            src={activeBannerImage}
-            alt="Hero Background"
-            className="absolute inset-0 w-full h-full object-cover object-center z-0"
-          />
+          {isVideoUrl(activeBannerImage) ? (
+            <video
+              key={activeBannerImage}
+              src={activeBannerImage}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover object-center z-0"
+            />
+          ) : (
+            <img
+              src={activeBannerImage}
+              alt="Hero Background"
+              className="absolute inset-0 w-full h-full object-cover object-center z-0"
+            />
+          )}
           {/* Directional gradient overlay: Dark on left for text, transparent on right for image */}
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/60 to-transparent z-10 pointer-events-none"></div>
         </div>
@@ -99,7 +118,7 @@ export default function Home() {
                     if (isExternal) {
                       return (
                         <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
-                          Detail Promo <ArrowRight className="ml-3 w-5 h-5" />
+                          Info Lebih Lanjut <ArrowRight className="ml-3 w-5 h-5" />
                         </a>
                       );
                     }

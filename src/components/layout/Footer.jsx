@@ -13,7 +13,7 @@ export default function Footer() {
               Premium quality kerudung and modest fashion. Direct to you.
             </p>
             <div className="flex space-x-4 pt-2">
-              <a href="#" className="p-2 bg-gray-50 text-gray-500 hover:text-primary hover:bg-green-50 rounded-full transition-colors">
+              <a href="https://instagram.com/nayea.id" className="p-2 bg-gray-50 text-gray-500 hover:text-primary hover:bg-green-50 rounded-full transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
             </div>

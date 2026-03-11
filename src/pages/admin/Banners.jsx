@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Upload, Video, Image } from 'lucide-react';
 import { getBanners, createBanner, updateBanner, deleteBanner, uploadFile } from '../../services/api';
+
+// Helper to detect if a URL points to a video file
+const isVideoUrl = (url) => {
+  if (!url) return false;
+  const lower = url.split('?')[0].toLowerCase();
+  return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.gif');
+};
 
 export default function Banners() {
   const [banners, setBanners] = useState([]);
@@ -65,13 +72,20 @@ export default function Banners() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Different size limits for video vs image
+    const isVideo = file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.gif');
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(`Ukuran file terlalu besar. Maksimal ${isVideo ? '50MB untuk video' : '5MB untuk gambar'}.`);
+      return;
+    }
+
     setUploading(true);
-    // Kita gunakan bucket 'banners' sesuai dengan schema kita
     const { url, error } = await uploadFile(file, 'banners');
     setUploading(false);
 
     if (error) {
-      alert("Gagal mengupload gambar: " + error.message);
+      alert("Gagal mengupload media: " + error.message);
     } else if (url) {
       setFormData({ ...formData, image_url: url });
     }
@@ -158,7 +172,15 @@ export default function Banners() {
                   <tr key={banner.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-4">
-                        <img src={banner.image_url} alt="Banner Preview" className="h-16 w-32 object-cover rounded-md bg-gray-100 shadow-sm border border-gray-200" />
+                        {isVideoUrl(banner.image_url) ? (
+                          <video
+                            src={banner.image_url}
+                            className="h-16 w-32 object-cover rounded-md bg-gray-100 shadow-sm border border-gray-200"
+                            autoPlay loop muted playsInline
+                          />
+                        ) : (
+                          <img src={banner.image_url} alt="Banner Preview" className="h-16 w-32 object-cover rounded-md bg-gray-100 shadow-sm border border-gray-200" />
+                        )}
                         <div>
                           <p className="font-semibold text-gray-900">{banner.title}</p>
                           <p className="text-gray-500 text-xs truncate w-48">{banner.description || 'Tidak ada deskripsi'}</p>
@@ -213,19 +235,36 @@ export default function Banners() {
                 {/* Upload Image Field */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Upload Gambar Banner <span className="text-red-500">*</span>
+                    Upload Media Banner <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1 p-5 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-center cursor-pointer relative">
                     {formData.image_url ? (
                       <div className="mb-4">
-                        <img src={formData.image_url} alt="Preview" className="mx-auto h-36 w-auto object-cover rounded-md shadow border border-gray-200" />
-                        <p className="text-xs text-green-600 mt-3 font-semibold">✓ Gambar tersimpan</p>
+                        {isVideoUrl(formData.image_url) ? (
+                          <div className="flex flex-col items-center">
+                            <video
+                              src={formData.image_url}
+                              className="mx-auto h-36 w-auto rounded-md shadow border border-gray-200"
+                              autoPlay loop muted playsInline
+                            />
+                            <p className="text-xs text-green-600 mt-3 font-semibold flex items-center gap-1">
+                              <Video className="w-3.5 h-3.5" /> Video tersimpan (loop)
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <img src={formData.image_url} alt="Preview" className="mx-auto h-36 w-auto object-cover rounded-md shadow border border-gray-200" />
+                            <p className="text-xs text-green-600 mt-3 font-semibold flex items-center gap-1">
+                              <Image className="w-3.5 h-3.5" /> Gambar tersimpan
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="mb-4">
                         <Upload className="mx-auto h-10 w-10 text-gray-400 mb-3" />
-                        <p className="text-sm text-gray-600 font-medium">Buka folder & pilih file</p>
-                        <p className="text-xs text-gray-400 mt-1">Format webp, png, jpg. Max 5MB</p>
+                        <p className="text-sm text-gray-600 font-medium">Buka folder &amp; pilih file</p>
+                        <p className="text-xs text-gray-400 mt-1">Gambar: JPG/PNG/WEBP (max 5MB) · Video: MP4/WEBM/GIF (max 50MB)</p>
                         <p className="text-xs text-blue-600 font-medium mt-2 bg-blue-50 py-1.5 px-3 rounded-md inline-block border border-blue-100">
                           Rekomendasi Desktop: 1920x800px (Rasio 21:9)
                         </p>
@@ -235,7 +274,7 @@ export default function Banners() {
                     <input
                       type="file"
                       id="file-upload"
-                      accept="image/jpeg, image/png, image/webp"
+                      accept="image/jpeg, image/png, image/webp, image/gif, video/mp4, video/webm"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={handleImageUpload}
                       disabled={uploading}
@@ -243,7 +282,7 @@ export default function Banners() {
 
                     {uploading && (
                       <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center rounded-lg">
-                        <p className="text-sm text-primary font-bold animate-pulse">Mengupload gambar...</p>
+                        <p className="text-sm text-primary font-bold animate-pulse">Mengupload media...</p>
                       </div>
                     )}
                   </div>

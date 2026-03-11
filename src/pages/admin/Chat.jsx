@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Search, MessageCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getMessages, sendMessage } from '../../services/api';
+import { getMessages, sendMessage, markMessagesDelivered, markMessagesRead } from '../../services/api';
 
 export default function Chat() {
   const [activeSession, setActiveSession] = useState(null);
@@ -58,6 +58,10 @@ export default function Chat() {
           }
         });
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+        // Update local message status when admin updates status
+        setAllMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, status: payload.new.status } : m));
+      })
       .subscribe((status, err) => {
         if (err) console.error("Realtime subscription error:", err);
       });
@@ -96,6 +100,8 @@ export default function Chat() {
     if (!error && data) {
       // Replace optimistic ID with Real DB ID
       setAllMessages(prev => prev.map(m => m.id === tempId ? data : m));
+      // Mark all customer messages in this session as read since admin has replied
+      markMessagesRead(activeSession);
     }
   };
 
@@ -113,6 +119,8 @@ export default function Chat() {
     // For messages created via optimistic UI, they might not have it until re-fetch,
     // so we scan backwards for the first valid metadata if needed.
     const msgWithMeta = msgs.slice().reverse().find(m => m.customer_name || m.customer_email) || {};
+    // Count unread customer messages (status='sent' means admin hasn't opened yet)
+    const unreadCount = msgs.filter(m => m.sender === 'customer' && m.status === 'sent').length;
 
     return {
       id: uid,
@@ -122,6 +130,7 @@ export default function Chat() {
       sender: lastMsg.sender,
       createdAt: new Date(lastMsg.created_at),
       timestamp: new Date(lastMsg.created_at).getTime(),
+      unreadCount,
     };
   }).sort((a, b) => b.timestamp - a.timestamp); // Sort By Latest (Bumps to top like WA)
 
@@ -163,7 +172,11 @@ export default function Chat() {
                 <li
                   key={chat.id}
                   className={`p-4 hover:bg-gray-100 cursor-pointer transition-colors ${activeSession === chat.id ? 'bg-primary bg-opacity-10 border-l-4 border-primary' : 'border-l-4 border-transparent'}`}
-                  onClick={() => setActiveSession(chat.id)}
+                  onClick={() => {
+                    setActiveSession(chat.id);
+                    // Mark all customer messages in this session as delivered when admin opens them
+                    markMessagesDelivered(chat.id);
+                  }}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <h3 className={`text-sm font-medium ${activeSession === chat.id ? 'text-primary' : 'text-gray-900'} truncate`}>
@@ -172,10 +185,15 @@ export default function Chat() {
                     <span className="text-xs text-gray-500 w-16 text-right flex-shrink-0">{formatTime(chat.createdAt)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <p className="text-sm text-gray-500 truncate pr-4">
+                    <p className="text-sm text-gray-500 truncate pr-2">
                       {chat.sender === 'admin' ? <span className="text-gray-400">Anda: </span> : ''}
                       {chat.lastMessage}
                     </p>
+                    {chat.unreadCount > 0 && (
+                      <span className="flex-shrink-0 bg-[#25D366] text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
+                        {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
+                      </span>
+                    )}
                   </div>
                 </li>
               ))}

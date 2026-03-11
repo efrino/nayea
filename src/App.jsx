@@ -6,6 +6,7 @@ import Home from './pages/storefront/Home';
 import Catalog from './pages/storefront/Catalog';
 import ProductDetail from './pages/storefront/ProductDetail';
 import Cart from './pages/storefront/Cart';
+import Wishlist from './pages/storefront/Wishlist';
 import Checkout from './pages/storefront/Checkout';
 import StoreLogin from './pages/storefront/StoreLogin';
 import StoreRegister from './pages/storefront/StoreRegister';
@@ -32,6 +33,7 @@ function App() {
               <Route path="catalog" element={<Catalog />} />
               <Route path="product/:id" element={<ProductDetail />} />
               <Route path="cart" element={<Cart />} />
+              <Route path="wishlist" element={<Wishlist />} />
               <Route path="checkout" element={<Checkout />} />
               <Route path="login" element={<StoreLogin />} />
               <Route path="register" element={<StoreRegister />} />

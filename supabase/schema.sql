@@ -15,6 +15,33 @@ create table if not exists products (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Phase 11 Upgrades to products
+alter table products 
+  add column if not exists images text[] default '{}',
+  add column if not exists video_url text,
+  add column if not exists colors text[] default '{}',
+  add column if not exists material text;
+
+-- Table: wishlists
+create table if not exists wishlists (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  product_id uuid references products(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(user_id, product_id)
+);
+
+-- Table: cart_items
+create table if not exists cart_items (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  product_id uuid references products(id) on delete cascade not null,
+  selected_color text,
+  quantity integer not null check (quantity > 0) default 1,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(user_id, product_id, selected_color)
+);
+
 -- Table: orders
 create table if not exists orders (
   id uuid default uuid_generate_v4() primary key,
@@ -53,8 +80,13 @@ create table messages (
   user_id uuid references auth.users(id) not null,
   sender text not null check (sender in ('customer', 'admin')),
   text text not null,
+  status text not null default 'sent' check (status in ('sent', 'delivered', 'read')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Phase 14: Add status column to existing messages table if it doesn't exist
+alter table messages add column if not exists status text not null default 'sent' check (status in ('sent', 'delivered', 'read'));
+
 
 
 -- ==============================================================================
@@ -90,6 +122,22 @@ create policy "Admin can delete products"
 on products for delete 
 using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
+-- 1.5 WISHLISTS & CART_ITEMS POLICIES
+alter table wishlists enable row level security;
+alter table cart_items enable row level security;
+
+-- Users can only see, insert, update, delete their own wishlists/carts
+drop policy if exists "Users can manage their own wishlists" on wishlists;
+create policy "Users can manage their own wishlists"
+on wishlists for all
+using (auth.role() = 'authenticated' AND user_id = auth.uid())
+with check (auth.role() = 'authenticated' AND user_id = auth.uid());
+
+drop policy if exists "Users can manage their own carts" on cart_items;
+create policy "Users can manage their own carts"
+on cart_items for all
+using (auth.role() = 'authenticated' AND user_id = auth.uid())
+with check (auth.role() = 'authenticated' AND user_id = auth.uid());
 
 -- 2. ORDERS & ORDER_ITEMS TABLE POLICIES 
 alter table orders enable row level security;

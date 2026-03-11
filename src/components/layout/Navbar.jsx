@@ -1,12 +1,32 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Menu, ShoppingBag, User, LogOut } from 'lucide-react';
+import { Search, Menu, ShoppingBag, User, LogOut, Heart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { getWishlists } from '../../services/api';
 
 export default function Navbar() {
   const { getCartCount } = useCart();
   const { session, user, logout } = useAuth();
   const cartCount = getCartCount();
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchWishlists() {
+      if (user) {
+        const { data } = await getWishlists(user.id);
+        setWishlistCount(data?.length || 0);
+      } else {
+        setWishlistCount(0);
+      }
+    }
+
+    fetchWishlists();
+
+    const handleWishlistUpdate = () => fetchWishlists();
+    window.addEventListener('wishlist_updated', handleWishlistUpdate);
+    return () => window.removeEventListener('wishlist_updated', handleWishlistUpdate);
+  }, [user]);
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
@@ -15,7 +35,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="text-2xl font-bold text-primary tracking-tight">
-              nayea.id
+              Nayea.id
             </Link>
           </div>
 
@@ -36,14 +56,25 @@ export default function Navbar() {
             <button className="p-2 text-gray-500 hover:text-primary transition-colors">
               <Search className="w-5 h-5" />
             </button>
-            <Link to="/cart" className="p-2 text-gray-500 hover:text-primary transition-colors relative">
-              <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
+
+            <div className="flex items-center space-x-2">
+              <Link to="/wishlist" className="p-2 text-gray-500 hover:text-red-500 transition-colors relative" title="Wishlist">
+                <Heart className="w-5 h-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-red-500 rounded-full">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+              <Link to="/cart" className="p-2 text-gray-500 hover:text-primary transition-colors relative" title="Keranjang">
+                <ShoppingBag className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-primary rounded-full">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            </div>
 
             {/* Customer Authentication */}
             {user ? (

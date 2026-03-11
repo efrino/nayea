@@ -4,31 +4,37 @@ import { supabase } from '../lib/supabase';
 // STORAGE SERVICES
 // ==========================================
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 /**
  * Upload a file to Supabase Storage
- * @param {File} file - File gambar yang akan di-upload
+ * @param {File} file - File gambar/video yang akan di-upload
  * @param {string} bucket - Nama bucket di Supabase (default: 'products')
  * @returns {Promise<{url: string|null, error: any}>}
  */
 export async function uploadFile(file, bucket = 'products') {
   if (!file) return { url: null, error: new Error('No file provided') };
 
+  const isVideo = file.type.startsWith('video/');
+  const allowedTypes = isVideo ? ALLOWED_VIDEO_TYPES : ALLOWED_IMAGE_TYPES;
+  const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+
   // Validasi Tipe File
-  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+  if (!allowedTypes.includes(file.type)) {
     return { 
       url: null, 
-      error: new Error('Tipe file tidak valid. Harap gunakan JPG, PNG, WEBP, atau GIF.') 
+      error: new Error(isVideo ? 'Tipe video tidak valid (Gunakan MP4/WEBM).' : 'Tipe file tidak valid (Gunakan JPG/PNG/WEBP).') 
     };
   }
 
   // Validasi Ukuran File
-  if (file.size > MAX_FILE_SIZE) {
+  if (file.size > maxSize) {
     return { 
       url: null, 
-      error: new Error('Ukuran file terlalu besar. Maksimal 5MB.') 
+      error: new Error(`Ukuran file terlalu besar. Maksimal ${isVideo ? '50MB' : '5MB'}.`) 
     };
   }
 
@@ -97,6 +103,131 @@ export async function deleteProduct(id) {
     .delete()
     .eq('id', id);
     
+  return { error };
+}
+
+// ==========================================
+// WISHLIST SERVICES
+// ==========================================
+
+export async function getWishlists(userId) {
+  if (!userId) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('wishlists')
+    .select('*, product:products(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+export async function toggleWishlist(userId, productId) {
+  if (!userId) return { error: new Error('User must be logged in') };
+  
+  // Periksa apakah sudah ada di wishlist
+  const { data: existing } = await supabase
+    .from('wishlists')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .single();
+
+  if (existing) {
+    // Hapus dari wishlist
+    const { error } = await supabase
+      .from('wishlists')
+      .delete()
+      .eq('id', existing.id);
+    return { added: false, error };
+  } else {
+    // Tambah ke wishlist
+    const { error } = await supabase
+      .from('wishlists')
+      .insert([{ user_id: userId, product_id: productId }]);
+    return { added: true, error };
+  }
+}
+
+// ==========================================
+// CART SERVICES
+// ==========================================
+
+export async function getCartItems(userId) {
+  if (!userId) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('cart_items')
+    .select('*, product:products(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+export async function addToCart(userId, productId, quantity = 1, selectedColor = null) {
+  if (!userId) return { error: new Error('User must be logged in') };
+
+  // Check if this explicit variant is already in cart
+  let query = supabase
+    .from('cart_items')
+    .select('id, quantity')
+    .eq('user_id', userId)
+    .eq('product_id', productId);
+    
+  if (selectedColor) {
+    query = query.eq('selected_color', selectedColor);
+  } else {
+    query = query.is('selected_color', null);
+  }
+  
+  const { data: existing } = await query.single();
+
+  if (existing) {
+    // Increment quantity
+    const { data, error } = await supabase
+      .from('cart_items')
+      .update({ quantity: existing.quantity + quantity })
+      .eq('id', existing.id)
+      .select()
+      .single();
+    return { data, error };
+  } else {
+    // Create new cart row
+    const { data, error } = await supabase
+      .from('cart_items')
+      .insert([{ 
+        user_id: userId, 
+        product_id: productId, 
+        quantity, 
+        selected_color: selectedColor 
+      }])
+      .select()
+      .single();
+    return { data, error };
+  }
+}
+
+export async function updateCartItemQuantity(id, quantity) {
+  const { data, error } = await supabase
+    .from('cart_items')
+    .update({ quantity })
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function removeFromCart(id) {
+  const { error } = await supabase
+    .from('cart_items')
+    .delete()
+    .eq('id', id);
+  return { error };
+}
+
+export async function clearCart(userId) {
+  if (!userId) return { error: null };
+  const { error } = await supabase
+    .from('cart_items')
+    .delete()
+    .eq('user_id', userId);
   return { error };
 }
 
@@ -232,3 +363,32 @@ export async function sendMessage(messageData) {
     .single();
   return { data, error };
 }
+
+/**
+ * Mark all 'sent' customer messages for a given user as 'delivered'.
+ * Called when an admin opens a chat session.
+ */
+export async function markMessagesDelivered(userId) {
+  const { error } = await supabase
+    .from('messages')
+    .update({ status: 'delivered' })
+    .eq('user_id', userId)
+    .eq('sender', 'customer')
+    .eq('status', 'sent');
+  return { error };
+}
+
+/**
+ * Mark all customer messages for a given user as 'read'.
+ * Called when an admin replies to a chat session.
+ */
+export async function markMessagesRead(userId) {
+  const { error } = await supabase
+    .from('messages')
+    .update({ status: 'read' })
+    .eq('user_id', userId)
+    .eq('sender', 'customer')
+    .neq('status', 'read');
+  return { error };
+}
+

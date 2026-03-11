@@ -1,15 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Lock } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MessageCircle, X, Send, Lock, Package, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getMessages, sendMessage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState([]);
+  const [unseenCount, setUnseenCount] = useState(0);
   const messagesEndRef = useRef(null);
+  const location = useLocation();
 
   const { user } = useAuth(); // Customer must be logged in
 
@@ -17,8 +19,53 @@ export default function ChatWidget() {
   const isAdmin = user?.user_metadata?.role === 'admin';
   if (isAdmin) return null;
 
+  // Detect if user is on a product page and fetch its name
+  const [contextProductId, setContextProductId] = useState(null);
+  const [contextProductName, setContextProductName] = useState(null);
+
+  useEffect(() => {
+    const match = location.pathname.match(/\/product\/([^/]+)/);
+    if (match) {
+      setContextProductId(match[1]);
+    } else {
+      setContextProductId(null);
+      setContextProductName(null);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!contextProductId) return;
+    supabase
+      .from('products')
+      .select('name')
+      .eq('id', contextProductId)
+      .single()
+      .then(({ data }) => {
+        if (data) setContextProductName(data.name);
+      });
+  }, [contextProductId]);
+
+  // Define contextual quick reply chips
+  const quickReplies = [
+    ...(contextProductName
+      ? [
+        `Apakah "${contextProductName}" sudah ready stock?`,
+        `"${contextProductName}" bisa dikirim hari ini?`,
+        `Info estimasi pengiriman "${contextProductName}" dong`,
+      ]
+      : []),
+    'Pesanan saya kapan sampai?',
+    'Pesanan saya sudah dikirim?',
+    'Bisa custom ukuran tidak?',
+    'Ada promo atau diskon sekarang?',
+  ];
+
   useEffect(() => {
     if (!isOpen || !user) return;
+
+    // Reset unseen count and update last-seen timestamp when chat opens
+    setUnseenCount(0);
+    localStorage.setItem(`chat_last_seen_${user.id}`, new Date().toISOString());
 
     // Load initial messages for this specific logged-in user
     getMessages(user.id).then(({ data }) => {
@@ -43,12 +90,52 @@ export default function ChatWidget() {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        // Listen for status updates from admin (delivered/read)
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setChatLog((current) =>
+            current.map(m => m.id === payload.new.id ? { ...m, status: payload.new.status } : m)
+          );
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [isOpen, user]);
+
+  // Separate effect: listen for admin messages even when chat is CLOSED (for unseen count)
+  useEffect(() => {
+    if (!user || isOpen) return;
+
+    // Count existing unseen admin messages from localStorage timestamp
+    const lastSeen = localStorage.getItem(`chat_last_seen_${user.id}`);
+    getMessages(user.id).then(({ data }) => {
+      if (data) {
+        const unseen = data.filter(m => m.sender === 'admin' && (!lastSeen || new Date(m.created_at) > new Date(lastSeen)));
+        setUnseenCount(unseen.length);
+      }
+    });
+
+    // Realtime: increment unseenCount when admin sends a message and chat is CLOSED
+    const bgChannel = supabase
+      .channel(`bg:messages:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new.sender === 'admin') {
+            setUnseenCount(prev => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(bgChannel);
+  }, [user, isOpen]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -65,9 +152,9 @@ export default function ChatWidget() {
       text: message.trim()
     };
 
-    // Optimistic UI Update
+    // Optimistic UI Update — default status 'sent'
     const tempId = crypto.randomUUID();
-    const optimisticMsg = { id: tempId, created_at: new Date().toISOString(), ...newMsg };
+    const optimisticMsg = { id: tempId, created_at: new Date().toISOString(), status: 'sent', ...newMsg };
 
     setChatLog(prev => [...prev.filter(m => m.id !== 'welcome'), optimisticMsg]);
     setMessage("");
@@ -83,6 +170,34 @@ export default function ChatWidget() {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  // Proper WhatsApp-style double-tick SVG component
+  const MessageStatus = ({ status }) => {
+    const singlePath = 'M1.5 5.5L5.5 9.5L12.5 1.5';
+    // Two overlapping V-shapes (shifted 4.5px right each)
+    const doublePath1 = 'M1.5 5.5L5.5 9.5L12.5 1.5';
+    const doublePath2 = 'M6 5.5L10 9.5L17 1.5';
+    const strokeColor = status === 'read' ? '#53BDEB' : '#9E9E9E';
+    const isDouble = status === 'delivered' || status === 'read';
+
+    return (
+      <svg
+        viewBox={isDouble ? '0 0 20 12' : '0 0 15 12'}
+        className={`inline-block ${isDouble ? 'w-5' : 'w-4'} h-3 ml-1 flex-shrink-0`}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {isDouble ? (
+          <>
+            <path d={doublePath1} stroke={strokeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={doublePath2} stroke={strokeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </>
+        ) : (
+          <path d={singlePath} stroke={strokeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        )}
+      </svg>
+    );
+  };
+
   return (
     <>
       {!isOpen && (
@@ -91,6 +206,11 @@ export default function ChatWidget() {
           className="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:bg-[#128C7E] transition-all transform hover:scale-110 z-50 flex items-center justify-center overflow-hidden"
         >
           <MessageCircle className="w-7 h-7" fill="currentColor" />
+          {unseenCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow">
+              {unseenCount > 9 ? '9+' : unseenCount}
+            </span>
+          )}
         </button>
       )}
 
@@ -145,15 +265,41 @@ export default function ChatWidget() {
                       ? 'bg-[#E2FFC7] text-gray-900 rounded-lg rounded-tr-none'
                       : 'bg-white text-gray-900 rounded-lg rounded-tl-none'
                       }`}>
-                      <p className="mb-2.5 pr-8 whitespace-pre-wrap leading-snug text-gray-800">{chat.text}</p>
-                      <span className="text-[10px] text-gray-400 absolute bottom-1 right-2">
-                        {formatTime(chat.created_at)}
-                      </span>
+                      <p className="mb-1 whitespace-pre-wrap leading-snug text-gray-800">{chat.text}</p>
+                      <div className="flex items-center justify-end gap-0.5">
+                        <span className="text-[10px] text-gray-400">
+                          {formatTime(chat.created_at)}
+                        </span>
+                        {chat.sender === 'customer' && <MessageStatus status={chat.status} />}
+                      </div>
                     </div>
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
               </div>
+
+              {/* Quick Reply Chips */}
+              {user && (
+                <div className="px-3 py-2 bg-[#F0F0F0] border-t border-gray-200/80">
+                  <div className="flex items-center gap-1 mb-1.5 text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
+                    <Package className="w-3 h-3" />
+                    Pertanyaan Cepat
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                    {quickReplies.map((reply, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setMessage(reply)}
+                        className="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-[#25D366] hover:text-[#075E54] hover:bg-green-50 transition-colors whitespace-nowrap shadow-sm flex items-center gap-1"
+                      >
+                        {reply}
+                        <ChevronRight className="w-3 h-3 opacity-50" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Input Area (WA Style) */}
               <div className="p-2.5 bg-[#F0F0F0] flex items-center shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">

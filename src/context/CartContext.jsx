@@ -1,79 +1,87 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import { getCartItems, addToCart as apiAddToCart, removeFromCart as apiRemoveFromCart, updateCartItemQuantity, clearCart as apiClearCart } from '../services/api';
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
-    // Try to load cart from local storage on initial mount
-    const [cartItems, setCartItems] = useState(() => {
-        try {
-            const savedCart = localStorage.getItem('nayea_cart');
-            return savedCart ? JSON.parse(savedCart) : [];
-        } catch (error) {
-            console.warn('Failed to load cart from local storage', error);
-            return [];
-        }
-    });
+    const { session } = useAuth();
+    const user = session?.user;
 
-    // Save cart to local storage whenever it changes
+    const [cartItems, setCartItems] = useState([]);
+    const [loadingCart, setLoadingCart] = useState(true);
+
+    const fetchCart = useCallback(async () => {
+        if (!user) {
+            setCartItems([]);
+            setLoadingCart(false);
+            return;
+        }
+        setLoadingCart(true);
+        const { data, error } = await getCartItems(user.id);
+        if (!error && data) {
+            setCartItems(data);
+        }
+        setLoadingCart(false);
+    }, [user]);
+
+    // Initial fetch and listen for auth changes
     useEffect(() => {
-        try {
-            localStorage.setItem('nayea_cart', JSON.stringify(cartItems));
-        } catch (error) {
-            console.warn('Failed to save cart to local storage', error);
+        fetchCart();
+    }, [fetchCart]);
+
+    // Listen to custom event to trigger cart refresh from other components
+    useEffect(() => {
+        const handleCartUpdate = () => fetchCart();
+        window.addEventListener('cart_updated', handleCartUpdate);
+        return () => window.removeEventListener('cart_updated', handleCartUpdate);
+    }, [fetchCart]);
+
+
+    const addToCart = async (product, quantity = 1, selectedColor = null) => {
+        if (!user) {
+            console.warn('User must be logged in to add to cart');
+            return { error: new Error('User must be logged in') };
         }
-    }, [cartItems]);
-
-    const addToCart = (product, quantity = 1) => {
-        setCartItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === product.id);
-
-            if (existingItem) {
-                // If product already exists, just update quantity (don't exceed stock)
-                const newQuantity = existingItem.quantity + quantity;
-                const boundedQuantity = Math.min(newQuantity, product.stock);
-
-                return prevItems.map(item =>
-                    item.id === product.id ? { ...item, quantity: boundedQuantity } : item
-                );
-            } else {
-                // Format product for cart
-                const cartProduct = {
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    image: product.image_url || 'https://via.placeholder.com/200x200?text=No+Image',
-                    stock: product.stock,
-                    is_preorder: product.is_preorder,
-                    quantity: Math.min(quantity, product.stock)
-                };
-                return [...prevItems, cartProduct];
-            }
-        });
+        const { data, error } = await apiAddToCart(user.id, product.id, quantity, selectedColor);
+        if (!error) {
+            fetchCart();
+        }
+        return { data, error };
     };
 
-    const removeFromCart = (id) => {
-        setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+    const removeFromCart = async (cartItemId) => {
+        const { error } = await apiRemoveFromCart(cartItemId);
+        if (!error) {
+            fetchCart();
+        }
     };
 
-    const updateQuantity = (id, newQuantity) => {
-        setCartItems(prevItems =>
-            prevItems.map(item => {
-                if (item.id === id) {
-                    // Ensure quantity is between 1 and available stock
-                    const validQuantity = Math.max(1, Math.min(newQuantity, item.stock));
-                    return { ...item, quantity: validQuantity };
-                }
-                return item;
-            })
-        );
+    const updateQuantity = async (cartItemId, newQuantity) => {
+        if (newQuantity < 1) return;
+        const { error } = await updateCartItemQuantity(cartItemId, newQuantity);
+        if (!error) {
+            fetchCart();
+        }
     };
 
-    const clearCart = () => {
-        setCartItems([]);
+    const clearCart = async () => {
+        if (!user) return;
+        const { error } = await apiClearCart(user.id);
+        if (!error) {
+            setCartItems([]);
+            fetchCart();
+        }
     };
 
     const getCartTotal = () => {
-        return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return cartItems.reduce((total, item) => {
+            // Because getCartItems joins products: select('*, product:products(*)')
+            if (item.product) {
+                return total + (item.product.price * item.quantity);
+            }
+            return total;
+        }, 0);
     };
 
     const getCartCount = () => {
@@ -82,6 +90,7 @@ export function CartProvider({ children }) {
 
     const value = {
         cartItems,
+        loadingCart,
         addToCart,
         removeFromCart,
         updateQuantity,
