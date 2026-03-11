@@ -1,48 +1,113 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
-import { getProducts } from '../../services/api';
+import { ArrowRight, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getProducts, getBanners } from '../../services/api';
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchFeatured() {
-      const { data, error } = await getProducts();
-      if (!error && data) {
-        // For home page, we only show top 4 latest products
-        setFeaturedProducts(data.slice(0, 4));
-      }
+    async function fetchData() {
+      const [productsRes, bannersRes] = await Promise.all([
+        getProducts(),
+        getBanners(true) // true to get only active banners
+      ]);
+
+      if (productsRes.data) setFeaturedProducts(productsRes.data.slice(0, 4));
+      if (bannersRes.data) setBanners(bannersRes.data);
+
       setLoading(false);
     }
-    fetchFeatured();
+    fetchData();
   }, []);
+
+  // Auto-rotate banners every 5 seconds
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIdx((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  const activeBannerImage = banners.length > 0
+    ? banners[currentBannerIdx].image_url
+    : 'https://images.unsplash.com/photo-1600262102148-18e5e80826bf?auto=format&fit=crop&q=80';
 
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-primary-dark">
-        <div className="absolute inset-0 overflow-hidden">
+      <section className="relative bg-primary-dark group">
+        <div className="absolute inset-0 overflow-hidden transition-all duration-1000">
           <img
-            src="https://images.unsplash.com/photo-1600262102148-18e5e80826bf?auto=format&fit=crop&q=80"
+            src={activeBannerImage}
             alt="Hero Background"
-            className="w-full h-full object-cover opacity-20"
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
+          {/* Directional gradient overlay: Dark on left for text, transparent on right for image */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/60 to-transparent z-10 pointer-events-none"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6">
-            Elegance in Modesty
-          </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-green-50 mb-10">
-            Discover our premium collection of kerudung and modest fashion. Designed for comfort, styled for elegance.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link to="/catalog" className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-primary bg-white hover:bg-gray-50 transition-all">
-              Shop Now <ArrowRight className="ml-2 w-5 h-5" />
-            </Link>
+
+        {banners.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentBannerIdx(prev => (prev - 1 + banners.length) % banners.length)}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/10 hover:bg-white/30 rounded-full text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={() => setCurrentBannerIdx(prev => (prev + 1) % banners.length)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/10 hover:bg-white/30 rounded-full text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
+
+        {banners.length > 0 && (
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-48 pointer-events-none z-20">
+            <div className="max-w-2xl text-left">
+              <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-tight mb-6 drop-shadow-2xl">
+                {banners[currentBannerIdx]?.title}
+              </h1>
+              {banners[currentBannerIdx]?.description && (
+                <p className="mt-4 text-lg md:text-2xl text-gray-200 font-medium mb-10 drop-shadow-lg leading-relaxed tracking-wide">
+                  {banners[currentBannerIdx].description}
+                </p>
+              )}
+              {banners[currentBannerIdx]?.link_url && (
+                <div className="flex justify-start space-x-4 pointer-events-auto mt-8">
+                  {banners[currentBannerIdx].link_url.startsWith('http') ? (
+                    <a href={banners[currentBannerIdx].link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
+                      Detail Promo <ArrowRight className="ml-3 w-5 h-5" />
+                    </a>
+                  ) : (
+                    <Link to={banners[currentBannerIdx].link_url} className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
+                      Shop Now <ArrowRight className="ml-3 w-5 h-5" />
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Dots */}
+        {banners.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+            {banners.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentBannerIdx(idx)}
+                className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentBannerIdx ? 'bg-white w-8' : 'bg-white/50'}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Products */}

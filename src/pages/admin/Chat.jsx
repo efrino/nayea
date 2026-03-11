@@ -1,27 +1,144 @@
-import { useState } from 'react';
-import { Send, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Send, Search, MessageCircle } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { getMessages, sendMessage } from '../../services/api';
 
 export default function Chat() {
-  const [activeChat, setActiveChat] = useState(1);
-  const [message, setMessage] = useState('');
+  const [activeSession, setActiveSession] = useState(null);
+  const [allMessages, setAllMessages] = useState([]);
+  const [messageText, setMessageText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const messagesEndRef = useRef(null);
 
-  const chatSessions = [
-    { id: 1, customer: 'Siti Aminah', lastMessage: 'Apakah Khimar Syar\'i warna abu ready?', time: '10:45 AM', unread: 2 },
-    { id: 2, customer: 'Nisa Rahmawati', lastMessage: 'Baik kak, terima kasih informasinya.', time: 'Yesterday', unread: 0 },
-    { id: 3, customer: 'Aulia Putri', lastMessage: 'Bisa minta resi pengiriman untuk order ORD-003?', time: 'Yesterday', unread: 0 },
-  ];
+  useEffect(() => {
+    // 1. Initial Load: Fetch ALL admin messages from all sessions
+    const fetchAllMessages = async () => {
+      const { data } = await getMessages(); // Passing no ID fetches all
 
-  const currentChatMsgs = [
-    { id: 1, sender: 'customer', text: 'Halo admin' },
-    { id: 2, sender: 'customer', text: 'Apakah Khimar Syar\'i warna abu ready?' },
-    { id: 3, sender: 'admin', text: 'Halo kak Siti! Untuk Khimar Syar\'i warna abu saat ini ready stock. Silakan langsung diorder ya kak.' },
-  ];
+      if (data) {
+        setAllMessages(data);
+        // Set most recently active session
+        if (data.length > 0) {
+          const sessions = [...new Set(data.map(m => m.user_id))];
+          const sortedSessions = sessions.sort((a, b) => {
+            const lastA = data.filter(m => m.user_id === a).pop()?.created_at;
+            const lastB = data.filter(m => m.user_id === b).pop()?.created_at;
+            return new Date(lastB) - new Date(lastA);
+          });
+          setActiveSession(prev => prev || sortedSessions[0]);
+        }
+      }
+    };
+
+    fetchAllMessages();
+
+    // 2. Global WebSockets listener for ALL new messages
+    // Ensure "Replication" is enabled for "messages" table in Supabase Dashboard!
+    const globalChannel = supabase
+      .channel('admin_all_messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        console.log("Realtime message received!", payload.new);
+        setAllMessages(prev => {
+          // Cegah duplikasi jika dipicu secara optimistic
+          if (prev.some(m => m.id === payload.new.id)) return prev;
+
+          // Cari info Customer Name/Email dari histori pesan sebelumnya
+          const existingUser = prev.find(m => m.user_id === payload.new.user_id && m.customer_email);
+          if (existingUser) {
+            const enrichedMsg = {
+              ...payload.new,
+              customer_name: existingUser.customer_name,
+              customer_email: existingUser.customer_email
+            };
+            return [...prev, enrichedMsg];
+          } else {
+            // Pengguna baru pertama kali chat, tarik tabel ulang dari RPC
+            fetchAllMessages();
+            return prev;
+          }
+        });
+      })
+      .subscribe((status, err) => {
+        if (err) console.error("Realtime subscription error:", err);
+      });
+
+    return () => {
+      supabase.removeChannel(globalChannel);
+    };
+  }, []);
+
+  // Filter ONLY active session's messages
+  const activeMessages = allMessages.filter(m => m.user_id === activeSession);
+
+  // Auto-scroll when activeMessages changes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeMessages.length, activeSession]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!messageText.trim() || !activeSession) return;
+
+    const newMsg = {
+      user_id: activeSession,
+      sender: 'admin',
+      text: messageText.trim()
+    };
+
+    // Optimistic UI Update for Snappy feel
+    const tempId = crypto.randomUUID();
+    const optimisticMsg = { id: tempId, created_at: new Date().toISOString(), ...newMsg };
+
+    setAllMessages(prev => [...prev, optimisticMsg]);
+    setMessageText('');
+
+    const { data, error } = await sendMessage(newMsg);
+    if (!error && data) {
+      // Replace optimistic ID with Real DB ID
+      setAllMessages(prev => prev.map(m => m.id === tempId ? data : m));
+    }
+  };
+
+  // Build Whatsapp-like Sidebar Data
+  const sessionMap = {};
+  allMessages.forEach(msg => {
+    if (!sessionMap[msg.user_id]) sessionMap[msg.user_id] = [];
+    sessionMap[msg.user_id].push(msg);
+  });
+
+  const sidebarSessions = Object.keys(sessionMap).map(uid => {
+    const msgs = sessionMap[uid];
+    const lastMsg = msgs[msgs.length - 1];
+    // We extract the actual name and email from the RPC response.
+    // For messages created via optimistic UI, they might not have it until re-fetch,
+    // so we scan backwards for the first valid metadata if needed.
+    const msgWithMeta = msgs.slice().reverse().find(m => m.customer_name || m.customer_email) || {};
+
+    return {
+      id: uid,
+      customerName: msgWithMeta.customer_name || 'Customer',
+      customerEmail: msgWithMeta.customer_email || 'customer@example.com',
+      lastMessage: lastMsg.text,
+      sender: lastMsg.sender,
+      createdAt: new Date(lastMsg.created_at),
+      timestamp: new Date(lastMsg.created_at).getTime(),
+    };
+  }).sort((a, b) => b.timestamp - a.timestamp); // Sort By Latest (Bumps to top like WA)
+
+  const filteredSessions = sidebarSessions.filter(s =>
+    s.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.customerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const formatTime = (dateObj) => {
+    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="flex h-[calc(100vh-8rem)] bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-      
+
       {/* Sidebar / Chat List */}
-      <div className="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
+      <div className="w-1/3 md:w-80 border-r border-gray-200 flex flex-col bg-gray-50 flex-shrink-0">
         <div className="p-4 border-b border-gray-200 bg-white">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -29,87 +146,116 @@ export default function Chat() {
             </div>
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              placeholder="Search conversations..."
+              placeholder="Cari Customer..."
             />
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto">
-          <ul className="divide-y divide-gray-100">
-            {chatSessions.map((chat) => (
-              <li 
-                key={chat.id} 
-                className={`p-4 hover:bg-gray-100 cursor-pointer transition-colors ${activeChat === chat.id ? 'bg-primary bg-opacity-5' : ''}`}
-                onClick={() => setActiveChat(chat.id)}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className={`text-sm font-medium ${chat.unread ? 'text-gray-900' : 'text-gray-700'}`}>{chat.customer}</h3>
-                  <span className="text-xs text-gray-500">{chat.time}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-500 truncate pr-4">{chat.lastMessage}</p>
-                  {chat.unread > 0 && (
-                    <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-primary rounded-full">
-                      {chat.unread}
-                    </span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {sidebarSessions.length === 0 ? (
+            <div className="p-4 text-center text-sm text-gray-500">Belum ada obrolan.</div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {filteredSessions.map((chat) => (
+                <li
+                  key={chat.id}
+                  className={`p-4 hover:bg-gray-100 cursor-pointer transition-colors ${activeSession === chat.id ? 'bg-primary bg-opacity-10 border-l-4 border-primary' : 'border-l-4 border-transparent'}`}
+                  onClick={() => setActiveSession(chat.id)}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className={`text-sm font-medium ${activeSession === chat.id ? 'text-primary' : 'text-gray-900'} truncate`}>
+                      {chat.customerName}
+                    </h3>
+                    <span className="text-xs text-gray-500 w-16 text-right flex-shrink-0">{formatTime(chat.createdAt)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-500 truncate pr-4">
+                      {chat.sender === 'admin' ? <span className="text-gray-400">Anda: </span> : ''}
+                      {chat.lastMessage}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
-          <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center text-primary font-bold text-lg">
-              {chatSessions.find(c => c.id === activeChat)?.customer.charAt(0)}
-            </div>
-            <div className="ml-3">
-              <h2 className="text-sm font-medium text-gray-900">{chatSessions.find(c => c.id === activeChat)?.customer}</h2>
-              <p className="text-xs text-green-500">Online</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Messages */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gray-50 flex flex-col space-y-4">
-          {currentChatMsgs.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] p-4 rounded-2xl text-sm shadow-sm ${
-                msg.sender === 'admin' 
-                  ? 'bg-primary text-white rounded-tr-sm' 
-                  : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
-              }`}>
-                {msg.text}
+      <div className="flex-1 flex flex-col bg-white">
+        {activeSession ? (
+          <>
+            {/* Chat Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+              <div className="flex items-center">
+                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                  {sidebarSessions.find(s => s.id === activeSession)?.customerName.charAt(0).toUpperCase() || 'C'}
+                </div>
+                <div className="ml-3">
+                  <h2 className="text-sm font-bold text-gray-900">
+                    {sidebarSessions.find(s => s.id === activeSession)?.customerName || 'Customer'}
+                  </h2>
+                  <p className="text-xs text-green-600 font-medium">
+                    {sidebarSessions.find(s => s.id === activeSession)?.customerEmail || ''}
+                  </p>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Chat Input */}
-        <div className="p-4 bg-white border-t border-gray-200">
-          <form className="flex space-x-4" onSubmit={(e) => { e.preventDefault(); setMessage(''); }}>
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your reply..."
-              className="flex-1 block w-full rounded-full border-gray-300 px-4 py-2 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border"
-            />
-            <button
-              type="submit"
-              disabled={!message.trim()}
-              className="inline-flex items-center justify-center rounded-full bg-primary p-2 text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 transition-colors"
-            >
-              <Send className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </form>
-        </div>
+            {/* Chat History */}
+            <div className="flex-1 p-6 overflow-y-auto bg-[#e5ddd5] flex flex-col space-y-4 shadow-inner">
+              {activeMessages.length === 0 ? (
+                <div className="text-center text-sm text-gray-500 mt-10 bg-white/60 p-2 rounded-lg inline-block self-center">Mulai percakapan...</div>
+              ) : (
+                activeMessages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`relative max-w-[75%] px-4 py-2 text-sm shadow-md ${msg.sender === 'admin'
+                      ? 'bg-[#dcf8c6] text-gray-900 rounded-lg rounded-tr-none'
+                      : 'bg-white border border-gray-100 text-gray-900 rounded-lg rounded-tl-none'
+                      }`}>
+                      <p className="mb-2 whitespace-pre-wrap">{msg.text}</p>
+                      <span className={`text-[10px] absolute bottom-1 right-2 ${msg.sender === 'admin' ? 'text-green-800' : 'text-gray-400'}`}>
+                        {formatTime(new Date(msg.created_at))}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200">
+              <form className="flex space-x-3 items-center" onSubmit={handleSend}>
+                <input
+                  type="text"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Ketik balasan Anda..."
+                  className="flex-1 block w-full rounded-2xl border-gray-300 px-4 py-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border transition-shadow"
+                />
+                <button
+                  type="submit"
+                  disabled={!messageText.trim()}
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 transition-all transform active:scale-95"
+                >
+                  <Send className="h-5 w-5 ml-1" aria-hidden="true" />
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-400">
+            <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4 text-gray-400">
+              <MessageCircle className="w-12 h-12" />
+            </div>
+            <p className="text-lg font-medium text-gray-600">Nayea.id Web Chat</p>
+            <p className="text-sm">Silakan pilih chat pada kolom di sebelah kiri.</p>
+          </div>
+        )}
       </div>
     </div>
   );

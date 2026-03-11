@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Search, Menu } from 'lucide-react';
+import { Search, Menu, ShoppingBag, User, LogOut } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
   const { getCartCount } = useCart();
+  const { session, user, logout } = useAuth();
   const cartCount = getCartCount();
 
   return (
@@ -26,6 +28,11 @@ export default function Navbar() {
 
           {/* Icons */}
           <div className="flex items-center space-x-4">
+            {session && (
+              <Link to="/admin" className="hidden md:inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-primary bg-primary-50 hover:bg-primary-100 transition-colors">
+                Admin Portal
+              </Link>
+            )}
             <button className="p-2 text-gray-500 hover:text-primary transition-colors">
               <Search className="w-5 h-5" />
             </button>
@@ -37,6 +44,28 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
+            {/* Customer Authentication */}
+            {user ? (
+              <div className="hidden md:flex items-center space-x-3 ml-2 border-l border-gray-200 pl-4">
+                <span className="text-sm font-medium text-gray-700 flex items-center">
+                  <User className="w-4 h-4 mr-1 text-gray-400" />
+                  {user.user_metadata?.full_name || 'Customer'}
+                </span>
+                <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Logout">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="hidden md:flex items-center space-x-3 ml-2 border-l border-gray-200 pl-4">
+                <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+                  Login
+                </Link>
+                <Link to="/register" className="text-sm font-medium text-white bg-primary px-4 py-2 rounded-full hover:bg-primary-dark transition-colors">
+                  Daftar
+                </Link>
+              </div>
+            )}
             <button className="md:hidden p-2 text-gray-500 hover:text-primary">
               <Menu className="w-6 h-6" />
             </button>

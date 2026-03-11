@@ -38,15 +38,19 @@ create table if not exists order_items (
 -- Table: banners
 create table if not exists banners (
   id uuid default uuid_generate_v4() primary key,
+  title text not null,
+  description text,
   image_url text not null,
+  link_url text,
   active boolean default true,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- Table: messages (for chat)
-create table if not exists messages (
+drop table if exists messages cascade;
+create table messages (
   id uuid default uuid_generate_v4() primary key,
-  session_id text not null,
+  user_id uuid references auth.users(id) not null,
   sender text not null check (sender in ('customer', 'admin')),
   text text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -62,23 +66,29 @@ create table if not exists messages (
 alter table products enable row level security;
 
 -- Policy: Everyone can view products
+drop policy if exists "Public can view products" on products;
 create policy "Public can view products" 
 on products for select 
 using (true);
 
--- Policy: Anyone can insert, update, or delete products (FOR DEVELOPMENT ONLY)
--- Note: In production, you would restrict this to authenticated admins using auth.uid()
-create policy "Anyone can insert products" 
+-- Policy: Admin can insert, update, or delete products
+drop policy if exists "Admin can insert products" on products;
+drop policy if exists "Anyone can insert products" on products;
+create policy "Admin can insert products" 
 on products for insert 
-with check (true);
+with check (auth.role() = 'authenticated');
 
-create policy "Anyone can update products" 
+drop policy if exists "Admin can update products" on products;
+drop policy if exists "Anyone can update products" on products;
+create policy "Admin can update products" 
 on products for update 
-using (true);
+using (auth.role() = 'authenticated');
 
-create policy "Anyone can delete products" 
+drop policy if exists "Admin can delete products" on products;
+drop policy if exists "Anyone can delete products" on products;
+create policy "Admin can delete products" 
 on products for delete 
-using (true);
+using (auth.role() = 'authenticated');
 
 
 -- 2. ORDERS & ORDER_ITEMS TABLE POLICIES 
@@ -86,26 +96,34 @@ alter table orders enable row level security;
 alter table order_items enable row level security;
 
 -- Policy: Anyone can insert orders (so customers can checkout)
+drop policy if exists "Anyone can insert orders" on orders;
 create policy "Anyone can insert orders" 
 on orders for insert 
 with check (true);
 
+drop policy if exists "Anyone can insert order_items" on order_items;
 create policy "Anyone can insert order_items" 
 on order_items for insert 
 with check (true);
 
 -- Policy: Admin can view and update all orders
-create policy "Anyone can view orders" 
+drop policy if exists "Admin can view orders" on orders;
+drop policy if exists "Anyone can view orders" on orders;
+create policy "Admin can view orders" 
 on orders for select 
-using (true);
+using (auth.role() = 'authenticated');
 
-create policy "Anyone can update orders" 
+drop policy if exists "Admin can update orders" on orders;
+drop policy if exists "Anyone can update orders" on orders;
+create policy "Admin can update orders" 
 on orders for update 
-using (true);
+using (auth.role() = 'authenticated');
 
-create policy "Anyone can view order_items" 
+drop policy if exists "Admin can view order_items" on order_items;
+drop policy if exists "Anyone can view order_items" on order_items;
+create policy "Admin can view order_items" 
 on order_items for select 
-using (true);
+using (auth.role() = 'authenticated');
 
 
 -- 3. STORAGE POLICIES (Run this manually in SQL Editor if bucket policies fail in dashboard)
@@ -116,19 +134,126 @@ values ('products', 'products', true)
 on conflict (id) do nothing;
 
 -- Policy: Public can view images in the "products" bucket
+drop policy if exists "Public Access to product images" on storage.objects;
 create policy "Public Access to product images"
 on storage.objects for select
 using ( bucket_id = 'products' );
 
--- Policy: Anyone can upload images to the "products" bucket
-create policy "Anyone can upload product images"
+-- Policy: Admin can upload images to the "products" bucket
+drop policy if exists "Admin can upload product images" on storage.objects;
+drop policy if exists "Anyone can upload product images" on storage.objects;
+create policy "Admin can upload product images"
 on storage.objects for insert
-with check ( bucket_id = 'products' );
+with check ( bucket_id = 'products' AND auth.role() = 'authenticated' );
 
-create policy "Anyone can update product images"
+drop policy if exists "Admin can update product images" on storage.objects;
+drop policy if exists "Anyone can update product images" on storage.objects;
+create policy "Admin can update product images"
 on storage.objects for update
-using ( bucket_id = 'products' );
+using ( bucket_id = 'products' AND auth.role() = 'authenticated' );
 
-create policy "Anyone can delete product images"
+drop policy if exists "Admin can delete product images" on storage.objects;
+drop policy if exists "Anyone can delete product images" on storage.objects;
+create policy "Admin can delete product images"
 on storage.objects for delete
-using ( bucket_id = 'products' );
+using ( bucket_id = 'products' AND auth.role() = 'authenticated' );
+
+
+-- 4. BANNERS TABLE POLICIES
+alter table banners enable row level security;
+
+drop policy if exists "Public can view banners" on banners;
+create policy "Public can view banners" 
+on banners for select 
+using (true);
+
+drop policy if exists "Admin can insert banners" on banners;
+create policy "Admin can insert banners" 
+on banners for insert 
+with check (auth.role() = 'authenticated');
+
+drop policy if exists "Admin can update banners" on banners;
+create policy "Admin can update banners" 
+on banners for update 
+using (auth.role() = 'authenticated');
+
+drop policy if exists "Admin can delete banners" on banners;
+create policy "Admin can delete banners" 
+on banners for delete 
+using (auth.role() = 'authenticated');
+
+
+-- 5. MESSAGES TABLE POLICIES (Live Chat)
+alter table messages enable row level security;
+
+-- Customers can insert their own messages, Admins can do anything.
+drop policy if exists "Authenticated users can insert messages" on messages;
+create policy "Authenticated users can insert messages" 
+on messages for insert 
+with check (auth.role() = 'authenticated' AND (user_id = auth.uid() OR sender = 'admin'));
+
+-- Customers can read their own messages, Admin sees all
+drop policy if exists "Authenticated users can read messages" on messages;
+create policy "Authenticated users can read messages" 
+on messages for select 
+using (auth.role() = 'authenticated');
+
+-- Enable Realtime for messages table
+alter publication supabase_realtime add table messages;
+
+
+-- 6. BANNERS STORAGE BUCKET
+insert into storage.buckets (id, name, public) 
+values ('banners', 'banners', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Public Access to banner images" on storage.objects;
+create policy "Public Access to banner images"
+on storage.objects for select
+using ( bucket_id = 'banners' );
+
+drop policy if exists "Admin can upload banner images" on storage.objects;
+create policy "Admin can upload banner images"
+on storage.objects for insert
+with check ( bucket_id = 'banners' AND auth.role() = 'authenticated' );
+
+drop policy if exists "Admin can update banner images" on storage.objects;
+create policy "Admin can update banner images"
+on storage.objects for update
+using ( bucket_id = 'banners' AND auth.role() = 'authenticated' );
+
+drop policy if exists "Admin can delete banner images" on storage.objects;
+create policy "Admin can delete banner images"
+on storage.objects for delete
+using ( bucket_id = 'banners' AND auth.role() = 'authenticated' );
+
+-- ==============================================================================
+-- 7. POSTGRES FUNCTIONS (RPC)
+-- ==============================================================================
+
+-- Function to fetch messages joined with user metadata (safe way to read auth.users)
+create or replace function get_chat_messages_with_users()
+returns table (
+  id uuid,
+  user_id uuid,
+  sender text,
+  text text,
+  created_at timestamp with time zone,
+  customer_name text,
+  customer_email text
+) 
+language sql
+security definer
+as $$
+  select 
+    m.id,
+    m.user_id,
+    m.sender,
+    m.text,
+    m.created_at,
+    (u.raw_user_meta_data->>'full_name')::text as customer_name,
+    u.email::text as customer_email
+  from public.messages m
+  left join auth.users u on m.user_id = u.id
+  order by m.created_at asc;
+$$;

@@ -153,3 +153,82 @@ export async function createOrder(orderData, cartItems) {
     return { data: null, error };
   }
 }
+
+// ==========================================
+// BANNER SERVICES
+// ==========================================
+
+export async function getBanners(activeOnly = false) {
+  let query = supabase.from('banners').select('*').order('created_at', { ascending: false });
+  if (activeOnly) {
+    query = query.eq('active', true);
+  }
+  const { data, error } = await query;
+  return { data, error };
+}
+
+export async function createBanner(bannerData) {
+  const { data, error } = await supabase
+    .from('banners')
+    .insert([bannerData])
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function updateBanner(id, updates) {
+  const { data, error } = await supabase
+    .from('banners')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function deleteBanner(id) {
+  const { error } = await supabase
+    .from('banners')
+    .delete()
+    .eq('id', id);
+  return { error };
+}
+
+// ==========================================
+// CHAT SERVICES
+// ==========================================
+
+export async function getMessages(userId = null) {
+  if (userId) {
+    // Customer reading their own messages
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+    return { data, error };
+  } else {
+    // Admin reading ALL messages with User Names (via RPC)
+    const { data, error } = await supabase.rpc('get_chat_messages_with_users');
+    return { data, error };
+  }
+}
+
+export async function getActiveChatSessions() {
+  const { data, error } = await supabase.rpc('get_chat_messages_with_users');
+    
+  if (error) return { data: null, error };
+  
+  // Extract unique user IDs
+  const sessions = [...new Set(data.map(m => m.user_id))];
+  return { data: sessions, error: null };
+}
+
+export async function sendMessage(messageData) {
+  const { data, error } = await supabase
+    .from('messages')
+    .insert([messageData])
+    .select()
+    .single();
+  return { data, error };
+}

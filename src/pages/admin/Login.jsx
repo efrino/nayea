@@ -1,22 +1,40 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = (e) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login, session } = useAuth();
+
+  // If already logged in, redirect them away from the login page
+  useEffect(() => {
+    if (session) {
+      navigate('/admin', { replace: true });
+    }
+  }, [session, navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Mock login
-    setTimeout(() => {
+    setErrorMsg('');
+
+    const { error } = await login(email, password);
+
+    if (error) {
+      setErrorMsg(error.message);
       setIsLoading(false);
-      navigate('/admin');
-    }, 1000);
+    } else {
+      // Send them to the page they tried to visit, or dashboard by default
+      const destination = location.state?.from?.pathname || '/admin';
+      navigate(destination, { replace: true });
+    }
   };
 
   return (
@@ -36,6 +54,17 @@ export default function Login() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-sm sm:rounded-2xl sm:px-10 border border-gray-100">
           <form className="space-y-6" onSubmit={handleLogin}>
+
+            {errorMsg && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{errorMsg}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -82,12 +111,6 @@ export default function Login() {
               </button>
             </div>
           </form>
-          
-          <div className="mt-6 bg-blue-50 p-4 rounded-md">
-            <p className="text-sm text-blue-700">
-              <strong>Demo Mode:</strong> Any email and password will work for this preview.
-            </p>
-          </div>
         </div>
       </div>
     </div>
