@@ -45,7 +45,7 @@ export default function Home() {
           <img
             src={activeBannerImage}
             alt="Hero Background"
-            className="absolute inset-0 w-full h-full object-cover z-0"
+            className="absolute inset-0 w-full h-full object-cover object-center z-0"
           />
           {/* Directional gradient overlay: Dark on left for text, transparent on right for image */}
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/60 to-transparent z-10 pointer-events-none"></div>
@@ -69,7 +69,7 @@ export default function Home() {
         )}
 
         {banners.length > 0 && (
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-48 pointer-events-none z-20">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 min-h-[60vh] lg:min-h-[80vh] flex flex-col justify-center pointer-events-none z-20">
             <div className="max-w-2xl text-left">
               <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-tight mb-6 drop-shadow-2xl">
                 {banners[currentBannerIdx]?.title}
@@ -81,15 +81,34 @@ export default function Home() {
               )}
               {banners[currentBannerIdx]?.link_url && (
                 <div className="flex justify-start space-x-4 pointer-events-auto mt-8">
-                  {banners[currentBannerIdx].link_url.startsWith('http') ? (
-                    <a href={banners[currentBannerIdx].link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
-                      Detail Promo <ArrowRight className="ml-3 w-5 h-5" />
-                    </a>
-                  ) : (
-                    <Link to={banners[currentBannerIdx].link_url} className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
-                      Shop Now <ArrowRight className="ml-3 w-5 h-5" />
-                    </Link>
-                  )}
+                  {(() => {
+                    let url = banners[currentBannerIdx].link_url.trim();
+                    let isExternal = false;
+
+                    if (url.match(/^https?:\/\//)) {
+                      isExternal = true;
+                    } else if (url.match(/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/)) {
+                      // It looks like a domain name (e.g nayea-omega.vercel.app or tokped.com)
+                      isExternal = true;
+                      url = `https://${url}`;
+                    } else if (!url.startsWith('/')) {
+                      // It's a local route missing the base slash (e.g product/123)
+                      url = `/${url}`;
+                    }
+
+                    if (isExternal) {
+                      return (
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
+                          Detail Promo <ArrowRight className="ml-3 w-5 h-5" />
+                        </a>
+                      );
+                    }
+                    return (
+                      <Link to={url} className="inline-flex items-center px-8 py-4 border border-transparent text-sm md:text-base font-bold rounded-xl shadow-xl text-primary bg-white hover:bg-gray-100 hover:scale-105 transition-all uppercase tracking-wider">
+                        Shop Now <ArrowRight className="ml-3 w-5 h-5" />
+                      </Link>
+                    );
+                  })()}
                 </div>
               )}
             </div>

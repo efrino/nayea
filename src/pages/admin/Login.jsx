@@ -11,29 +11,42 @@ export default function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, session } = useAuth();
+  const { login, logout, session } = useAuth();
 
-  // If already logged in, redirect them away from the login page
+  // If already logged in, redirect them away from the login page ONLY if they are an admin
   useEffect(() => {
     if (session) {
-      navigate('/admin', { replace: true });
+      if (session.user?.user_metadata?.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        // If they are logged in but not an admin (e.g., a customer wandered here)
+        // Log them out to break the infinite redirect loop
+        logout();
+        setErrorMsg('Akses Ditolak: Anda lari ke halaman Admin menggunakan akun Customer.');
+      }
     }
-  }, [session, navigate]);
+  }, [session, navigate, logout]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
 
-    const { error } = await login(email, password);
+    const { data, error } = await login(email, password);
 
     if (error) {
       setErrorMsg(error.message);
       setIsLoading(false);
     } else {
-      // Send them to the page they tried to visit, or dashboard by default
-      const destination = location.state?.from?.pathname || '/admin';
-      navigate(destination, { replace: true });
+      if (data?.user?.user_metadata?.role === 'admin') {
+        // Send them to the page they tried to visit, or dashboard by default
+        const destination = location.state?.from?.pathname || '/admin';
+        navigate(destination, { replace: true });
+      } else {
+        await logout();
+        setErrorMsg('Akses Ditolak: Akun Anda bukan Administrator.');
+        setIsLoading(false);
+      }
     }
   };
 

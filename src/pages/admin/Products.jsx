@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
-import { getProducts, createProduct, deleteProduct, uploadFile } from '../../services/api';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile } from '../../services/api';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -38,6 +39,29 @@ export default function Products() {
     }
   };
 
+  const handleOpenModal = (product = null) => {
+    if (product) {
+      setEditId(product.id);
+      setName(product.name || '');
+      setDescription(product.description || '');
+      setPrice(product.price ? product.price.toString() : '');
+      setStock(product.stock !== undefined ? product.stock.toString() : '0');
+      setIsPreorder(product.is_preorder || false);
+      setImagePreview(product.image_url || '');
+      setImageFile(null);
+    } else {
+      setEditId(null);
+      setName('');
+      setDescription('');
+      setPrice('');
+      setStock('0');
+      setIsPreorder(false);
+      setImagePreview('');
+      setImageFile(null);
+    }
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -59,10 +83,20 @@ export default function Products() {
         price: parseFloat(price),
         stock: parseInt(stock, 10) || 0,
         is_preorder: isPreorder,
-        image_url: imageUrl
       };
 
-      const { error } = await createProduct(productData);
+      if (imageUrl) {
+        productData.image_url = imageUrl;
+      }
+
+      let error;
+      if (editId) {
+        const res = await updateProduct(editId, productData);
+        error = res.error;
+      } else {
+        const res = await createProduct(productData);
+        error = res.error;
+      }
 
       if (error) throw error;
 
@@ -90,6 +124,7 @@ export default function Products() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setEditId(null);
     setName('');
     setDescription('');
     setPrice('');
@@ -111,7 +146,7 @@ export default function Products() {
           <p className="mt-1 text-sm text-gray-500">Manage your product catalog, pricing, and inventory.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => handleOpenModal()}
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors"
         >
           <Plus className="-ml-1 mr-2 w-5 h-5" aria-hidden="true" />
@@ -170,8 +205,8 @@ export default function Products() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                      <button className="text-blue-600 hover:text-blue-800 transition-colors"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={() => handleOpenModal(product)} className="text-blue-600 hover:text-blue-800 transition-colors"><Edit2 className="w-4 h-4 inline-block" /></button>
+                      <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 transition-colors"><Trash2 className="w-4 h-4 inline-block" /></button>
                     </td>
                   </tr>
                 ))
@@ -189,7 +224,7 @@ export default function Products() {
 
             <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
               <div className="flex justify-between items-center mb-5">
-                <h3 className="text-lg font-medium leading-6 text-gray-900">Add New Product</h3>
+                <h3 className="text-lg font-medium leading-6 text-gray-900">{editId ? 'Edit Product' : 'Add New Product'}</h3>
                 <button onClick={closeModal} className="text-gray-400 hover:text-gray-500">
                   <X className="w-5 h-5" />
                 </button>
@@ -259,7 +294,7 @@ export default function Products() {
                 {/* Submit */}
                 <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
                   <button type="submit" disabled={isSubmitting} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm disabled:opacity-50">
-                    {isSubmitting ? 'Saving...' : 'Save Product'}
+                    {isSubmitting ? 'Saving...' : editId ? 'Update Product' : 'Save Product'}
                   </button>
                   <button type="button" onClick={closeModal} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
                     Cancel

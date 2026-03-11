@@ -13,6 +13,10 @@ export default function ChatWidget() {
 
   const { user } = useAuth(); // Customer must be logged in
 
+  // Hide widget if the logged-in user is an Admin
+  const isAdmin = user?.user_metadata?.role === 'admin';
+  if (isAdmin) return null;
+
   useEffect(() => {
     if (!isOpen || !user) return;
 
@@ -138,8 +142,8 @@ export default function ChatWidget() {
                 {chatLog.map((chat) => (
                   <div key={chat.id} className={`flex ${chat.sender === 'customer' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`relative max-w-[85%] px-3 py-2 text-[14.5px] shadow-sm ${chat.sender === 'customer'
-                        ? 'bg-[#E2FFC7] text-gray-900 rounded-lg rounded-tr-none'
-                        : 'bg-white text-gray-900 rounded-lg rounded-tl-none'
+                      ? 'bg-[#E2FFC7] text-gray-900 rounded-lg rounded-tr-none'
+                      : 'bg-white text-gray-900 rounded-lg rounded-tl-none'
                       }`}>
                       <p className="mb-2.5 pr-8 whitespace-pre-wrap leading-snug text-gray-800">{chat.text}</p>
                       <span className="text-[10px] text-gray-400 absolute bottom-1 right-2">

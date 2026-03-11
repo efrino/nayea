@@ -16,6 +16,19 @@ export default function Banners() {
     active: true
   });
 
+  const getSmartHref = (urlStr) => {
+    if (!urlStr) return '#';
+    let url = urlStr.trim();
+    if (url.match(/^https?:\/\//)) {
+      return url;
+    } else if (url.match(/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/)) {
+      return `https://${url}`;
+    } else if (!url.startsWith('/')) {
+      return `/${url}`;
+    }
+    return url;
+  };
+
   useEffect(() => {
     fetchBanners();
   }, []);
@@ -149,7 +162,7 @@ export default function Banners() {
                         <div>
                           <p className="font-semibold text-gray-900">{banner.title}</p>
                           <p className="text-gray-500 text-xs truncate w-48">{banner.description || 'Tidak ada deskripsi'}</p>
-                          {banner.link_url && <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs mt-1 block">Buka Tautan</a>}
+                          {banner.link_url && <a href={getSmartHref(banner.link_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs mt-1 block">Buka Tautan</a>}
                         </div>
                       </div>
                     </td>
@@ -213,6 +226,9 @@ export default function Banners() {
                         <Upload className="mx-auto h-10 w-10 text-gray-400 mb-3" />
                         <p className="text-sm text-gray-600 font-medium">Buka folder & pilih file</p>
                         <p className="text-xs text-gray-400 mt-1">Format webp, png, jpg. Max 5MB</p>
+                        <p className="text-xs text-blue-600 font-medium mt-2 bg-blue-50 py-1.5 px-3 rounded-md inline-block border border-blue-100">
+                          Rekomendasi Desktop: 1920x800px (Rasio 21:9)
+                        </p>
                       </div>
                     )}
 

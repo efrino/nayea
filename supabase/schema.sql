@@ -76,19 +76,19 @@ drop policy if exists "Admin can insert products" on products;
 drop policy if exists "Anyone can insert products" on products;
 create policy "Admin can insert products" 
 on products for insert 
-with check (auth.role() = 'authenticated');
+with check ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "Admin can update products" on products;
 drop policy if exists "Anyone can update products" on products;
 create policy "Admin can update products" 
 on products for update 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "Admin can delete products" on products;
 drop policy if exists "Anyone can delete products" on products;
 create policy "Admin can delete products" 
 on products for delete 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 
 -- 2. ORDERS & ORDER_ITEMS TABLE POLICIES 
@@ -111,19 +111,19 @@ drop policy if exists "Admin can view orders" on orders;
 drop policy if exists "Anyone can view orders" on orders;
 create policy "Admin can view orders" 
 on orders for select 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "Admin can update orders" on orders;
 drop policy if exists "Anyone can update orders" on orders;
 create policy "Admin can update orders" 
 on orders for update 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "Admin can view order_items" on order_items;
 drop policy if exists "Anyone can view order_items" on order_items;
 create policy "Admin can view order_items" 
 on order_items for select 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 
 -- 3. STORAGE POLICIES (Run this manually in SQL Editor if bucket policies fail in dashboard)
@@ -144,19 +144,19 @@ drop policy if exists "Admin can upload product images" on storage.objects;
 drop policy if exists "Anyone can upload product images" on storage.objects;
 create policy "Admin can upload product images"
 on storage.objects for insert
-with check ( bucket_id = 'products' AND auth.role() = 'authenticated' );
+with check ( bucket_id = 'products' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 drop policy if exists "Admin can update product images" on storage.objects;
 drop policy if exists "Anyone can update product images" on storage.objects;
 create policy "Admin can update product images"
 on storage.objects for update
-using ( bucket_id = 'products' AND auth.role() = 'authenticated' );
+using ( bucket_id = 'products' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 drop policy if exists "Admin can delete product images" on storage.objects;
 drop policy if exists "Anyone can delete product images" on storage.objects;
 create policy "Admin can delete product images"
 on storage.objects for delete
-using ( bucket_id = 'products' AND auth.role() = 'authenticated' );
+using ( bucket_id = 'products' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 
 -- 4. BANNERS TABLE POLICIES
@@ -170,17 +170,17 @@ using (true);
 drop policy if exists "Admin can insert banners" on banners;
 create policy "Admin can insert banners" 
 on banners for insert 
-with check (auth.role() = 'authenticated');
+with check ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "Admin can update banners" on banners;
 create policy "Admin can update banners" 
 on banners for update 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "Admin can delete banners" on banners;
 create policy "Admin can delete banners" 
 on banners for delete 
-using (auth.role() = 'authenticated');
+using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 
 -- 5. MESSAGES TABLE POLICIES (Live Chat)
@@ -190,13 +190,48 @@ alter table messages enable row level security;
 drop policy if exists "Authenticated users can insert messages" on messages;
 create policy "Authenticated users can insert messages" 
 on messages for insert 
-with check (auth.role() = 'authenticated' AND (user_id = auth.uid() OR sender = 'admin'));
+with check (
+  auth.role() = 'authenticated' AND (
+    (user_id = auth.uid() AND sender = 'customer') OR 
+    ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' AND sender = 'admin')
+  )
+);
 
 -- Customers can read their own messages, Admin sees all
 drop policy if exists "Authenticated users can read messages" on messages;
 create policy "Authenticated users can read messages" 
 on messages for select 
-using (auth.role() = 'authenticated');
+using (
+  auth.role() = 'authenticated' AND (
+    user_id = auth.uid() OR 
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  )
+);
+
+-- ==============================================================================
+-- 6. AUTHENTICATION TRIGGERS (Auto-Role Assignment)
+-- ==============================================================================
+
+-- Create a function to force 'customer' role, except for the designated admin email
+create or replace function public.on_auth_user_created()
+returns trigger as $$
+begin
+  -- If the email belongs to the predefined super admin
+  if new.email = 'efrinowep@gmail.com' then
+    new.raw_user_meta_data = coalesce(new.raw_user_meta_data, '{}'::jsonb) || '{"role": "admin"}'::jsonb;
+  else
+    -- Force everyone else to be a customer, overriding any API injections
+    new.raw_user_meta_data = coalesce(new.raw_user_meta_data, '{}'::jsonb) || '{"role": "customer"}'::jsonb;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Attach the trigger to Supabase auth.users table
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  before insert on auth.users
+  for each row execute procedure public.on_auth_user_created();
 
 -- Enable Realtime for messages table
 alter publication supabase_realtime add table messages;
@@ -257,3 +292,15 @@ as $$
   left join auth.users u on m.user_id = u.id
   order by m.created_at asc;
 $$;
+
+-- ==============================================================================
+-- 8. INITIAL ADMIN SETUP (Run this manually in SQL Editor to set the admin role)
+-- ==============================================================================
+
+UPDATE auth.users 
+SET raw_user_meta_data = jsonb_set(
+  COALESCE(raw_user_meta_data, '{}'::jsonb), 
+  '{role}', 
+  '"admin"'
+)
+WHERE email = 'efrinowep@gmail.com';

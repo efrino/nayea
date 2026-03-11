@@ -1,8 +1,11 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Package, LayoutDashboard, Image as ImageIcon, ShoppingCart, MessageSquare, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -22,7 +25,7 @@ export default function AdminLayout() {
             Admin
           </span>
         </div>
-        
+
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -31,11 +34,10 @@ export default function AdminLayout() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
+                className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                     ? 'bg-primary bg-opacity-10 text-primary-dark'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <Icon className={`mr-3 w-5 h-5 ${isActive ? 'text-primary' : 'text-gray-400'}`} />
                 {item.name}
@@ -45,10 +47,13 @@ export default function AdminLayout() {
         </nav>
 
         <div className="p-4 border-t border-gray-200">
-          <Link to="/" className="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+          <button
+            onClick={async () => { await logout(); navigate('/admin/login'); }}
+            className="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          >
             <LogOut className="mr-3 w-5 h-5 text-red-500" />
             Sign out
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -65,7 +70,7 @@ export default function AdminLayout() {
             </div>
           </div>
         </header>
-        
+
         <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
           <Outlet />
         </main>

@@ -28,7 +28,7 @@ export default function Navbar() {
 
           {/* Icons */}
           <div className="flex items-center space-x-4">
-            {session && (
+            {session?.user?.user_metadata?.role === 'admin' && (
               <Link to="/admin" className="hidden md:inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-primary bg-primary-50 hover:bg-primary-100 transition-colors">
                 Admin Portal
               </Link>

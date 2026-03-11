@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Chrome } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function StoreLogin() {
@@ -18,10 +18,27 @@ export default function StoreLogin() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
-            setError(error.message);
+            if (error.message.includes('Email not confirmed')) {
+                setError('Email belum dikonfirmasi. Silakan periksa kotak masuk email Anda dan klik tautan verifikasi sebelum login.');
+            } else {
+                setError(error.message);
+            }
         } else {
             navigate('/');
         }
+        setLoading(false);
+    };
+
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        setError(null);
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+        if (error) setError(error.message);
         setLoading(false);
     };
 
@@ -91,6 +108,28 @@ export default function StoreLogin() {
                             >
                                 {loading ? 'Memeriksa...' : 'Login'}
                             </button>
+                        </div>
+
+                        <div className="mt-6">
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-300" />
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-2 bg-white text-gray-500">Atau masuk dengan</span>
+                                </div>
+                            </div>
+                            <div className="mt-6">
+                                <button
+                                    type="button"
+                                    onClick={handleGoogleLogin}
+                                    disabled={loading}
+                                    className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
+                                >
+                                    <Chrome className="w-5 h-5 mr-2 text-red-500" />
+                                    Google
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
