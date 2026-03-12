@@ -19,6 +19,7 @@ import Login from './pages/admin/Login';
 import Dashboard from './pages/admin/Dashboard';
 import Products from './pages/admin/Products';
 import Orders from './pages/admin/Orders';
+import Payments from './pages/admin/Payments';
 import Banners from './pages/admin/Banners';
 import Chat from './pages/admin/Chat';
 
@@ -51,6 +52,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="products" element={<Products />} />
               <Route path="orders" element={<Orders />} />
+              <Route path="payments" element={<Payments />} />
               <Route path="banners" element={<Banners />} />
               <Route path="chat" element={<Chat />} />
             </Route>

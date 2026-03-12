@@ -52,6 +52,9 @@ export default function Checkout() {
 
   /* ─── Debounced destination search ─── */
   useEffect(() => {
+    // Prevent searching if input matches already selected destination
+    if (selectedDest && destSearch === selectedDest.label) return;
+    
     if (destSearch.length < 3) { setDestResults([]); return; }
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
@@ -61,8 +64,7 @@ export default function Checkout() {
       setShowResults(results.length > 0);
       setIsSearching(false);
     }, 500);
-  }, [destSearch]);
-
+  }, [destSearch, selectedDest]);
   /* ─── Fetch ALL courier rates when destination is selected ─── */
   useEffect(() => {
     if (!selectedDest) return;
@@ -71,8 +73,13 @@ export default function Checkout() {
     setSelectedService(null);
     setShippingError('');
     setActiveCourier('ALL');
-    // 500g per item, min 1000g
-    const totalWeight = Math.max(1000, cartItems.reduce((s, i) => s + i.quantity * 500, 0));
+
+    // Calculate total weight from cart items (product.weight in grams)
+    const totalWeight = cartItems.reduce((sum, item) => {
+      const perItemWeight = item.product?.weight || 500; // Default to 500g if missing
+      return sum + (item.quantity * perItemWeight);
+    }, 0);
+    
     getShippingRates(selectedDest.id, totalWeight).then(rates => {
       setShippingRates(rates);
       setLoadingShipping(false);
@@ -80,8 +87,10 @@ export default function Checkout() {
     });
   }, [selectedDest, cartItems]);
 
-  // Redirect if cart empty
-  if (cartItems.length === 0 && !isSuccess) { navigate('/cart'); return null; }
+  // Redirect if cart empty — must be in useEffect, not render body
+  useEffect(() => {
+    if (cartItems.length === 0 && !isSuccess) navigate('/cart');
+  }, [cartItems, isSuccess, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -116,6 +125,8 @@ export default function Checkout() {
         shipping_address: fullAddress,
         shipping_courier: courierStr,
         shipping_cost:    selectedService.price,
+        payment_method:   'bank_transfer',
+        payment_status:   'unpaid',
       };
 
       const { error } = await createOrder(orderData, cartItems);
@@ -137,16 +148,41 @@ export default function Checkout() {
     : shippingRates.filter(r => r.courier === activeCourier);
 
   const shippingCost = selectedService?.price ?? 0;
+  const totalAmount = getCartTotal() + shippingCost;
+
+  const handleWhatsAppRedir = () => {
+    const adminPhone = "+6281234567890"; // Ganti dengan nomor WhatsApp admin Anda
+    const orderItemsStr = cartItems.map(item => `- ${item.product.name} (${item.quantity}x)`).join('%0A');
+    const msg = `Halo Admin Nayea! Saya ingin konfirmasi pesanan:%0A%0A` +
+                `*Nama:* ${formData.name}%0A` +
+                `*Total:* Rp ${totalAmount.toLocaleString('id-ID')}%0A` +
+                `*Kurir:* ${selectedService.courier} ${selectedService.service}%0A` +
+                `*Alamat:* ${formData.address}, ${selectedDest.label}%0A%0A` +
+                `*Pesanan:*%0A${orderItemsStr}%0A%0A` +
+                `Mohon instruksi selanjutnya untuk pembayaran. Terima kasih!`;
+    window.open(`https://wa.me/${adminPhone.replace('+', '')}?text=${msg}`, '_blank');
+  };
 
   /* ─── Success Screen ─── */
   if (isSuccess) {
     return (
       <div className="bg-gray-50 min-h-screen py-24 flex items-center justify-center">
-        <div className="bg-white p-12 rounded-3xl shadow-sm text-center max-w-lg w-full mx-4">
+        <div className="bg-white p-12 rounded-3xl shadow-sm text-center max-w-lg w-full mx-4 border border-gray-100">
           <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Pemesanan Berhasil!</h2>
-          <p className="text-gray-500 mb-8">Terima kasih! Kami akan segera memprosesnya dan menghubungi Anda melalui WhatsApp.</p>
-          <p className="text-sm text-gray-400">Mengalihkan ke halaman utama...</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Pemesanan Dicatat!</h2>
+          <p className="text-gray-500 mb-8">Terima kasih! Pesanan Anda telah tersimpan. Silakan klik tombol di bawah untuk konfirmasi via WhatsApp agar segera diproses.</p>
+          
+          <div className="space-y-4">
+            <button
+              onClick={handleWhatsAppRedir}
+              className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white py-4 rounded-full font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+            >
+              Konfirmasi via WhatsApp
+            </button>
+            <Link to="/" className="block text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors">
+              Kembali ke Beranda
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -345,13 +381,26 @@ export default function Checkout() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Metode Pembayaran</h2>
                 <div className="space-y-3">
-                  <label className="flex items-center p-4 border border-primary rounded-xl bg-primary/5 cursor-pointer ring-1 ring-primary">
-                    <input type="radio" name="payment_method" defaultChecked className="h-4 w-4 text-primary border-gray-300" />
-                    <span className="ml-3 text-sm font-medium text-gray-700">Transfer Bank (BCA / Mandiri / BSI)</span>
-                  </label>
-                  <label className="flex items-center p-4 border border-gray-200 rounded-xl opacity-50 cursor-not-allowed">
+                  <div className="p-5 border border-primary rounded-2xl bg-primary/5 ring-1 ring-primary space-y-4">
+                    <label className="flex items-center cursor-pointer">
+                      <input type="radio" name="payment_method" defaultChecked className="h-4 w-4 text-primary border-gray-300" />
+                      <span className="ml-3 text-sm font-bold text-gray-900">Transfer Bank Manual</span>
+                    </label>
+                    <div className="pl-7 space-y-3 text-sm text-gray-600 border-t border-primary/10 pt-4">
+                      <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-primary/20">
+                        <div>
+                          <p className="text-xs text-gray-400">BCA</p>
+                          <p className="font-mono font-bold text-gray-900">1234567890</p>
+                          <p className="text-[10px]">a/n NAYEA OFFICIAL</p>
+                        </div>
+                        <button type="button" onClick={() => navigator.clipboard.writeText('1234567890')} className="text-xs text-primary font-bold">Salin</button>
+                      </div>
+                      <p className="text-[11px] leading-relaxed italic">* Harap simpan bukti transfer untuk dikonfirmasikan via WhatsApp setelah klik tombol "Selesaikan Pesanan".</p>
+                    </div>
+                  </div>
+                  <label className="flex items-center p-4 border border-gray-200 rounded-2xl opacity-50 cursor-not-allowed">
                     <input type="radio" name="payment_method" disabled className="h-4 w-4 text-gray-400 border-gray-300" />
-                    <span className="ml-3 text-sm font-medium text-gray-400">Cash on Delivery (COD) — <span className="text-xs">Segera Hadir</span></span>
+                    <span className="ml-3 text-sm font-medium text-gray-400">QRIS (Segera Hadir)</span>
                   </label>
                 </div>
               </div>

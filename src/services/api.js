@@ -275,9 +275,9 @@ export async function createOrder(orderData, cartItems) {
     // 2. Siapkan data order_items berdasarkan ID order yang baru dibuat
     const orderItems = cartItems.map((item) => ({
       order_id: order.id,
-      product_id: item.id,
+      product_id: item.product_id,
       quantity: item.quantity,
-      price: item.price,
+      price: item.product?.price,
     }));
 
     // 3. Insert semua item secara batch

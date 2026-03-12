@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Package, LayoutDashboard, Image as ImageIcon, ShoppingCart, MessageSquare, LogOut } from 'lucide-react';
+import { Package, LayoutDashboard, Image as ImageIcon, ShoppingCart, MessageSquare, LogOut, CreditCard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -78,6 +78,7 @@ export default function AdminLayout() {
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
+    { name: 'Payments', path: '/admin/payments', icon: CreditCard },
     { name: 'Banners', path: '/admin/banners', icon: ImageIcon },
     { name: 'Chat Inbox', path: '/admin/chat', icon: MessageSquare, badge: unreadChatCount },
   ];

@@ -20,7 +20,8 @@ alter table products
   add column if not exists images text[] default '{}',
   add column if not exists video_url text,
   add column if not exists colors text[] default '{}',
-  add column if not exists material text;
+  add column if not exists material text,
+  add column if not exists weight integer default 500; -- in grams
 
 -- Table: wishlists
 create table if not exists wishlists (
@@ -53,6 +54,9 @@ create table if not exists orders (
   shipping_cost numeric default 0,
   total_amount numeric not null,
   status text default 'pending' check (status in ('pending', 'paid', 'shipped', 'cancelled')),
+  payment_method text default 'bank_transfer',
+  payment_status text default 'unpaid' check (payment_status in ('unpaid', 'pending_verification', 'paid')),
+  payment_proof_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -153,10 +157,28 @@ create policy "Anyone can insert orders"
 on orders for insert 
 with check (true);
 
+-- Policy: Customers can view their own orders
+drop policy if exists "Users can view their own orders" on orders;
+create policy "Users can view their own orders"
+on orders for select
+using (auth.uid() = user_id OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+
 drop policy if exists "Anyone can insert order_items" on order_items;
 create policy "Anyone can insert order_items" 
 on order_items for insert 
 with check (true);
+
+-- Policy: Customers can view items in their own orders
+drop policy if exists "Users can view their own order_items" on order_items;
+create policy "Users can view their own order_items"
+on order_items for select
+using (
+  exists (
+    select 1 from orders 
+    where orders.id = order_items.order_id 
+    and (orders.user_id = auth.uid() OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+  )
+);
 
 -- Policy: Admin can view and update all orders
 drop policy if exists "Admin can view orders" on orders;

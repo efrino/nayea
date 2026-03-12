@@ -14,6 +14,7 @@ export default function Products() {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
   const [isPreorder, setIsPreorder] = useState(false);
+  const [weight, setWeight] = useState('500'); // grams
 
   // Advanced Tokopedia-style Product Features
   const [material, setMaterial] = useState('');
@@ -90,6 +91,7 @@ export default function Products() {
       setPrice(product.price ? product.price.toString() : '');
       setStock(product.stock !== undefined ? product.stock.toString() : '0');
       setIsPreorder(product.is_preorder || false);
+      setWeight(product.weight !== undefined ? product.weight.toString() : '500');
       setMaterial(product.material || '');
       setVideoUrl(product.video_url || '');
       setColors(product.colors || []);
@@ -110,6 +112,7 @@ export default function Products() {
       setPrice('');
       setStock('0');
       setIsPreorder(false);
+      setWeight('500');
       setMaterial('');
       setVideoUrl('');
       setColors([]);
@@ -163,6 +166,7 @@ export default function Products() {
         material,
         video_url: videoFile ? finalVideoUrl : videoUrl,
         colors,
+        weight: parseInt(weight, 10) || 500,
         images: finalImageArray,
         image_url: finalImageArray.length > 0 ? finalImageArray[0] : null // Keep backwards compatibility with old UI if needed
       };
@@ -207,6 +211,7 @@ export default function Products() {
     setPrice('');
     setStock('0');
     setIsPreorder(false);
+    setWeight('500');
     setMaterial('');
     setVideoUrl('');
     setColors([]);
@@ -254,6 +259,7 @@ export default function Products() {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
               </tr>
@@ -290,6 +296,7 @@ export default function Products() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatPrice(product.price)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.weight || 500}g</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                         ${!product.is_preorder ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
@@ -446,8 +453,8 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Price & Stock Row */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Price, Stock & Weight Row */}
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price (Rp)</label>
                     <input type="number" id="price" required min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
@@ -455,6 +462,10 @@ export default function Products() {
                   <div>
                     <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Stock</label>
                     <input type="number" id="stock" required min="0" value={stock} onChange={(e) => setStock(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
+                  </div>
+                  <div>
+                    <label htmlFor="weight" className="block text-sm font-medium text-gray-700">Weight (g)</label>
+                    <input type="number" id="weight" required min="1" value={weight} onChange={(e) => setWeight(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
                   </div>
                 </div>
 

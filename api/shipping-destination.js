@@ -1,0 +1,27 @@
+/**
+ * Vercel Serverless Function
+ * Proxy: GET /api/shipping-destination?search=...&limit=...
+ * → securely forwards to rajaongkir.komerce.id server-side (no CORS issue)
+ */
+export default async function handler(req, res) {
+  // CORS headers so browser can call this endpoint
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const { search = '', limit = 15, offset = 0 } = req.query;
+  if (!search || search.length < 3) return res.status(400).json({ data: [] });
+
+  try {
+    const params = new URLSearchParams({ search, limit: String(limit), offset: String(offset) });
+    const upstream = await fetch(
+      `https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?${params}`,
+      { headers: { key: process.env.KOMERCE_API_KEY } }
+    );
+    const json = await upstream.json();
+    return res.status(upstream.status).json(json);
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+}
