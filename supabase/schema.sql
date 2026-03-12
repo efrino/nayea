@@ -45,8 +45,12 @@ create table if not exists cart_items (
 -- Table: orders
 create table if not exists orders (
   id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete set null,
   customer_name text not null,
   customer_phone text not null,
+  shipping_address text,
+  shipping_courier text,
+  shipping_cost numeric default 0,
   total_amount numeric not null,
   status text default 'pending' check (status in ('pending', 'paid', 'shipped', 'cancelled')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
