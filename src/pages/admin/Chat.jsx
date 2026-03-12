@@ -9,6 +9,11 @@ export default function Chat() {
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
+  const activeSessionRef = useRef(null);
+
+  useEffect(() => {
+    activeSessionRef.current = activeSession;
+  }, [activeSession]);
 
   useEffect(() => {
     // 1. Initial Load: Fetch ALL admin messages from all sessions
@@ -27,7 +32,7 @@ export default function Chat() {
             const lastB = data.filter(m => m.user_id === b).pop()?.created_at;
             return new Date(lastB) - new Date(lastA);
           });
-          setActiveSession(prev => prev || sortedSessions[0]);
+          // Do NOT auto-set activeSession to sortedSessions[0] to mimic WhatsApp's empty startup state
         }
       }
     };
@@ -40,15 +45,33 @@ export default function Chat() {
       .channel('admin_all_messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         console.log("Realtime message received!", payload.new);
+        
+        // Admin status marking for incoming customer messages
+        if (payload.new.sender === 'customer') {
+            if (activeSessionRef.current === payload.new.user_id) {
+                markMessagesRead(payload.new.user_id);
+                supabase.channel(`chat_presense:${payload.new.user_id}`).send({ type: 'broadcast', event: 'admin_read', payload: {} });
+            } else {
+                markMessagesDelivered(payload.new.user_id);
+                supabase.channel(`chat_presense:${payload.new.user_id}`).send({ type: 'broadcast', event: 'admin_online', payload: {} });
+            }
+        }
+
         setAllMessages(prev => {
           // Cegah duplikasi jika dipicu secara optimistic
           if (prev.some(m => m.id === payload.new.id)) return prev;
+
+          // Jika pesan dikirim Admin lewat WS, pastikan 'sent' status ada
+          let newMsg = { ...payload.new };
+          if (newMsg.sender === 'admin' && !newMsg.status) {
+              newMsg.status = 'sent';
+          }
 
           // Cari info Customer Name/Email dari histori pesan sebelumnya
           const existingUser = prev.find(m => m.user_id === payload.new.user_id && m.customer_email);
           if (existingUser) {
             const enrichedMsg = {
-              ...payload.new,
+              ...newMsg,
               customer_name: existingUser.customer_name,
               customer_email: existingUser.customer_email
             };
@@ -61,17 +84,51 @@ export default function Chat() {
         });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-        // Update local message status when admin updates status
+        // Update local message status when admin updates status (DB Fallback)
         setAllMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, status: payload.new.status } : m));
       })
       .subscribe((status, err) => {
         if (err) console.error("Realtime subscription error:", err);
       });
 
+    // Listen to ALL customer broadcasts globally
+    // We map over unique sessions to subscribe to their presence channels
+    // Alternatively, listening dynamically as sessions appear.
+    // For simplicity, we just use the DB listener as the source of truth for all sessions,
+    // but we can manually subscribe to active ones. However, a catch-all broadcast isn't possible
+    // without matching topic. We will subscribe to `chat_presense:*` using a trick:
+    // Supabase allows wildcard listening if you just use a single global room for all users,
+    // But since we split it, we dynamically manage it below.
+    const presenceChannels = {};
+
     return () => {
       supabase.removeChannel(globalChannel);
     };
   }, []);
+
+  // Dynamically manage presence channels for snappy updates
+  useEffect(() => {
+     const uniqueSessions = [...new Set(allMessages.map(m => m.user_id))];
+     const channelsToKeep = new Set(uniqueSessions);
+     
+     // Note: We avoid creating 1000 channels, limit to active ones if needed, but for small shop it's fine
+     uniqueSessions.forEach(userId => {
+        if (!window[`__ch_${userId}`]) {
+           window[`__ch_${userId}`] = supabase.channel(`chat_presense:${userId}`)
+             .on('broadcast', { event: 'customer_read' }, () => {
+                 setAllMessages(prev => prev.map(m => m.user_id === userId && m.sender === 'admin' ? { ...m, status: 'read' } : m));
+             })
+             .on('broadcast', { event: 'customer_online' }, () => {
+                 setAllMessages(prev => prev.map(m => m.user_id === userId && m.sender === 'admin' && m.status === 'sent' ? { ...m, status: 'delivered' } : m));
+             })
+             .subscribe();
+        }
+     });
+
+     return () => {
+        // In a real app we'd clean up inactive ones, but for now we keep them open
+     };
+  }, [allMessages.length]);
 
   // Filter ONLY active session's messages
   const activeMessages = allMessages.filter(m => m.user_id === activeSession);
@@ -93,7 +150,7 @@ export default function Chat() {
 
     // Optimistic UI Update for Snappy feel
     const tempId = crypto.randomUUID();
-    const optimisticMsg = { id: tempId, created_at: new Date().toISOString(), ...newMsg };
+    const optimisticMsg = { id: tempId, created_at: new Date().toISOString(), status: 'sent', ...newMsg };
 
     setAllMessages(prev => [...prev, optimisticMsg]);
     setMessageText('');
@@ -104,6 +161,7 @@ export default function Chat() {
       setAllMessages(prev => prev.map(m => m.id === tempId ? data : m));
       // Mark all customer messages in this session as read since admin has replied
       markMessagesRead(activeSession);
+      supabase.channel(`chat_presense:${activeSession}`).send({ type: 'broadcast', event: 'admin_read', payload: {} });
     }
   };
 
@@ -121,14 +179,16 @@ export default function Chat() {
     // For messages created via optimistic UI, they might not have it until re-fetch,
     // so we scan backwards for the first valid metadata if needed.
     const msgWithMeta = msgs.slice().reverse().find(m => m.customer_name || m.customer_email) || {};
-    // Count unread customer messages (status='sent' means admin hasn't opened yet)
-    const unreadCount = msgs.filter(m => m.sender === 'customer' && m.status === 'sent').length;
+    // Count unread customer messages (status !== 'read' means admin hasn't opened yet)
+    // ONLY count if sender is customer.
+    const unreadCount = msgs.filter(m => m.sender === 'customer' && m.status !== 'read').length;
 
     return {
       id: uid,
       customerName: msgWithMeta.customer_name || 'Customer',
       customerEmail: msgWithMeta.customer_email || 'customer@example.com',
       lastMessage: lastMsg.text,
+      lastMessageStatus: lastMsg.status || 'delivered', // Fallback
       sender: lastMsg.sender,
       createdAt: new Date(lastMsg.created_at),
       timestamp: new Date(lastMsg.created_at).getTime(),
@@ -143,6 +203,22 @@ export default function Chat() {
 
   const formatTime = (dateObj) => {
     return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatSidebarTime = (dateObj) => {
+    const now = new Date();
+    const isToday = dateObj.getDate() === now.getDate() && dateObj.getMonth() === now.getMonth() && dateObj.getFullYear() === now.getFullYear();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = dateObj.getDate() === yesterday.getDate() && dateObj.getMonth() === yesterday.getMonth() && dateObj.getFullYear() === yesterday.getFullYear();
+
+    if (isToday) {
+      return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (isYesterday) {
+      return 'Kemarin';
+    } else {
+      return dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
   };
 
   // Shared SVG tick component (same paths as ChatWidget for consistency)
@@ -188,18 +264,23 @@ export default function Chat() {
                     setActiveSession(chat.id);
                     // Admin opened this session → mark all their messages as READ (blue ticks)
                     markMessagesRead(chat.id);
+                    supabase.channel(`chat_presense:${chat.id}`).send({ type: 'broadcast', event: 'admin_read', payload: {} });
                   }}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <h3 className={`text-sm font-medium ${activeSession === chat.id ? 'text-primary' : 'text-gray-900'} truncate`}>
                       {chat.customerName}
                     </h3>
-                    <span className="text-xs text-gray-500 w-16 text-right flex-shrink-0">{formatTime(chat.createdAt)}</span>
+                    <span className="text-xs text-gray-500 w-[70px] text-right flex-shrink-0">{formatSidebarTime(chat.createdAt)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <p className="text-sm text-gray-500 truncate pr-2">
-                      {chat.sender === 'admin' ? <span className="text-gray-400">Anda: </span> : ''}
-                      {chat.lastMessage}
+                    <p className="text-sm text-gray-500 truncate pr-2 flex items-center">
+                      {chat.sender === 'admin' && (
+                        <span className="mr-1 inline-flex items-center">
+                           <MsgTick status={chat.lastMessageStatus} />
+                        </span>
+                      )}
+                      <span className="truncate">{chat.lastMessage}</span>
                     </p>
                     {chat.unreadCount > 0 && (
                       <span className="flex-shrink-0 bg-[#25D366] text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
@@ -250,7 +331,7 @@ export default function Chat() {
                       <div className={`flex items-center justify-end gap-0.5 ${msg.sender === 'admin' ? 'text-green-800' : 'text-gray-400'}`}>
                         <span className="text-[10px]">{formatTime(new Date(msg.created_at))}</span>
                         {/* Admin's outgoing messages show delivery/read status ticks */}
-                        {msg.sender === 'admin' && <MsgTick status={msg.status || 'sent'} />}
+                        {msg.sender === 'admin' && <MsgTick status={msg.status || 'delivered'} />}
                       </div>
                     </div>
                   </div>

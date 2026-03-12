@@ -279,6 +279,18 @@ with check (
   user_id = auth.uid() AND sender = 'admin'
 );
 
+-- Additionally, allow customer to also trigger updates for their own messages
+-- when the status changes due to other DB processes, though admin usually does this.
+drop policy if exists "Customer can update own messages" on messages;
+create policy "Customer can update own messages"
+on messages for update
+using (
+  user_id = auth.uid() AND sender = 'customer'
+)
+with check (
+  user_id = auth.uid() AND sender = 'customer'
+);
+
 -- Enable REPLICA IDENTITY FULL so Realtime broadcasts UPDATE events (not just INSERT)
 alter table messages replica identity full;
 
@@ -349,6 +361,7 @@ returns table (
   user_id uuid,
   sender text,
   text text,
+  status text,
   created_at timestamp with time zone,
   customer_name text,
   customer_email text
@@ -361,6 +374,7 @@ as $$
     m.user_id,
     m.sender,
     m.text,
+    m.status,
     m.created_at,
     (u.raw_user_meta_data->>'full_name')::text as customer_name,
     u.email::text as customer_email

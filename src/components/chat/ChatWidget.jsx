@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, X, Send, Lock, Package, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getMessages, sendMessage, markAdminMessagesRead } from '../../services/api';
+import { getMessages, sendMessage, markAdminMessagesRead, markAdminMessagesDelivered } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -66,11 +66,14 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!isOpen || !user) return;
 
-    // Reset unseen count and update last-seen timestamp when chat opens
+    // Reset unseen count when chat opens
     setUnseenCount(0);
-    localStorage.setItem(`chat_last_seen_${user.id}`, new Date().toISOString());
-    // Mark all admin messages in this session as 'read' so admin sees blue ticks
+    // Mark all admin messages in this session as 'read' so admin sees blue ticks in DB
     markAdminMessagesRead(user.id);
+    
+    // Broadcast instant "Read" receipt directly to Admin without waiting for DB
+    const bgChannel = supabase.channel(`chat_presense:${user.id}`);
+    bgChannel.send({ type: 'broadcast', event: 'customer_read', payload: {} });
 
     // Load initial messages for this specific logged-in user
     getMessages(user.id).then(({ data }) => {
@@ -93,11 +96,17 @@ export default function ChatWidget() {
             if (current.some(m => m.id === payload.new.id)) return current;
             return [...current.filter(m => m.id !== 'welcome'), payload.new];
           });
+          if (payload.new.sender === 'admin') {
+            // Widget is open, mark it read immediately in DB
+            markAdminMessagesRead(user.id);
+            // And instantly broadcast to Admin
+            supabase.channel(`chat_presense:${user.id}`).send({ type: 'broadcast', event: 'customer_read', payload: {} });
+          }
         }
       )
       .on(
         'postgres_changes',
-        // Listen for status updates from admin (delivered/read)
+        // Listen for status updates from admin (delivered/read) via DB (as fallback)
         { event: 'UPDATE', schema: 'public', table: 'messages', filter: `user_id=eq.${user.id}` },
         (payload) => {
           setChatLog((current) =>
@@ -107,8 +116,29 @@ export default function ChatWidget() {
       )
       .subscribe();
 
+    // Fast Broadcast Channel for Instant Tick Updates
+    const fastChannel = supabase
+      .channel(`chat_presense:${user.id}`)
+      .on('broadcast', { event: 'admin_read' }, () => {
+         setChatLog(current =>
+            current.map(m => m.sender === 'customer' ? { ...m, status: 'read' } : m)
+         );
+      })
+      .on('broadcast', { event: 'admin_online' }, () => {
+         setChatLog(current =>
+            current.map(m => (m.sender === 'customer' && m.status === 'sent') ? { ...m, status: 'delivered' } : m)
+         );
+      })
+      .subscribe((status) => {
+         if (status === 'SUBSCRIBED') {
+            // Tell admin we are online (widget open translates to customer_read)
+            supabase.channel(`chat_presense:${user.id}`).send({ type: 'broadcast', event: 'customer_read', payload: {} });
+         }
+      });
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(fastChannel);
     };
   }, [isOpen, user]);
 
@@ -116,17 +146,31 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!user || isOpen) return;
 
-    // Count existing unseen admin messages from localStorage timestamp
-    const lastSeen = localStorage.getItem(`chat_last_seen_${user.id}`);
+    // Count existing unseen admin messages from DB
     getMessages(user.id).then(({ data }) => {
       if (data) {
-        const unseen = data.filter(m => m.sender === 'admin' && (!lastSeen || new Date(m.created_at) > new Date(lastSeen)));
+        const unseen = data.filter(m => m.sender === 'admin' && m.status !== 'read');
         setUnseenCount(unseen.length);
+        if (unseen.length > 0) {
+           markAdminMessagesDelivered(user.id);
+        }
       }
     });
 
     // Realtime: increment unseenCount when admin sends a message and chat is CLOSED
     const bgChannel = supabase
+      .channel(`chat_presense:${user.id}`)
+      .on('broadcast', { event: 'admin_read' }, () => {
+         // Nothing to do structurally if unseenCount is for admin msgs
+      })
+      .subscribe((status) => {
+         if (status === 'SUBSCRIBED') {
+            // Tell admin we are actively on the website
+            supabase.channel(`chat_presense:${user.id}`).send({ type: 'broadcast', event: 'customer_online', payload: {} });
+         }
+      });
+
+    const dbChannel = supabase
       .channel(`bg:messages:${user.id}`)
       .on(
         'postgres_changes',
@@ -134,12 +178,27 @@ export default function ChatWidget() {
         (payload) => {
           if (payload.new.sender === 'admin') {
             setUnseenCount(prev => prev + 1);
+            markAdminMessagesDelivered(user.id);
+            // Instant broadcast delivery
+            supabase.channel(`chat_presense:${user.id}`).send({ type: 'broadcast', event: 'customer_online', payload: {} });
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+           if (payload.new.sender === 'admin' && payload.new.status === 'read') {
+               setUnseenCount(prev => Math.max(0, prev - 1));
+           }
         }
       )
       .subscribe();
 
-    return () => supabase.removeChannel(bgChannel);
+    return () => {
+      supabase.removeChannel(bgChannel);
+      supabase.removeChannel(dbChannel);
+    };
   }, [user, isOpen]);
 
   // Scroll to bottom

@@ -430,3 +430,13 @@ export async function markAdminMessagesRead(userId) {
     .neq("status", "read");
   return { error };
 }
+
+export async function markAdminMessagesDelivered(userId) {
+  const { error } = await supabase
+    .from("messages")
+    .update({ status: "delivered" })
+    .eq("user_id", userId)
+    .eq("sender", "admin")
+    .eq("status", "sent");
+  return { error };
+}

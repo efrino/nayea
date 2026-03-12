@@ -36,6 +36,8 @@ export default function AdminLayout() {
       setUnreadChatCount(0);
     }
 
+    let fetchTimeout;
+    
     // Real-time: count new customer messages
     const channel = supabase
       .channel('admin_layout_unread')
@@ -56,14 +58,20 @@ export default function AdminLayout() {
         }
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-        // When messages are marked read, re-fetch unread count
+        // When messages are marked read, re-fetch unread count but DEBOUNCED
         if (payload.new.status === 'read' || payload.new.status === 'delivered') {
-          fetchUnread();
+          clearTimeout(fetchTimeout);
+          fetchTimeout = setTimeout(() => {
+            fetchUnread();
+          }, 300);
         }
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+       clearTimeout(fetchTimeout);
+       supabase.removeChannel(channel);
+    };
   }, [location.pathname]);
 
   const navItems = [
@@ -126,21 +134,29 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-          <h1 className="text-lg font-medium text-gray-900">
-            {navItems.find(item => item.path === location.pathname)?.name || 'Admin CMS'}
-          </h1>
-          <div className="flex items-center">
-            <span className="text-sm font-medium text-gray-700">Admin User</span>
-            <div className="ml-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
-              A
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
-          <Outlet />
-        </main>
+        {/* Only show header and padding if NOT on the chat page */}
+        {location.pathname !== '/admin/chat' ? (
+          <>
+            <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
+              <h1 className="text-lg font-medium text-gray-900">
+                {navItems.find(item => item.path === location.pathname)?.name || 'Admin CMS'}
+              </h1>
+              <div className="flex items-center">
+                <span className="text-sm font-medium text-gray-700">Admin User</span>
+                <div className="ml-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
+                  A
+                </div>
+              </div>
+            </header>
+            <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
+              <Outlet />
+            </main>
+          </>
+        ) : (
+          <main className="flex-1 overflow-hidden bg-white">
+            <Outlet />
+          </main>
+        )}
       </div>
     </div>
   );
