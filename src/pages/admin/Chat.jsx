@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Search, MessageCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getMessages, sendMessage, markMessagesDelivered, markMessagesRead } from '../../services/api';
+import { getMessages, sendMessage, markMessagesDelivered, markMessagesRead, markAllMessagesDelivered } from '../../services/api';
 
 export default function Chat() {
   const [activeSession, setActiveSession] = useState(null);
@@ -17,6 +17,8 @@ export default function Chat() {
 
       if (data) {
         setAllMessages(data);
+        // Admin is online — mark ALL pending 'sent' messages as 'delivered' across all sessions
+        markAllMessagesDelivered();
         // Set most recently active session
         if (data.length > 0) {
           const sessions = [...new Set(data.map(m => m.user_id))];
@@ -143,6 +145,16 @@ export default function Chat() {
     return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Shared SVG tick component (same paths as ChatWidget for consistency)
+  const doublePath = "M5.03033 11.4697C4.73744 11.1768 4.26256 11.1768 3.96967 11.4697C3.67678 11.7626 3.67678 12.2374 3.96967 12.5303L5.03033 11.4697ZM8.5 16L7.96967 16.5303C8.26256 16.8232 8.73744 16.8232 9.03033 16.5303L8.5 16ZM17.0303 8.53033C17.3232 8.23744 17.3232 7.76256 17.0303 7.46967C16.7374 7.17678 16.2626 7.17678 15.9697 7.46967L17.0303 8.53033ZM9.03033 11.4697C8.73744 11.1768 8.26256 11.1768 7.96967 11.4697C7.67678 11.7626 7.67678 12.2374 7.96967 12.5303L9.03033 11.4697ZM12.5 16L11.9697 16.5303C12.2626 16.8232 12.7374 16.8232 13.0303 16.5303L12.5 16ZM21.0303 8.53033C21.3232 8.23744 21.3232 7.76256 21.0303 7.46967C20.7374 7.17678 20.2626 7.17678 19.9697 7.46967L21.0303 8.53033ZM3.96967 12.5303L7.96967 16.5303L9.03033 15.4697L5.03033 11.4697L3.96967 12.5303ZM9.03033 16.5303L17.0303 8.53033L15.9697 7.46967L7.96967 15.4697L9.03033 16.5303ZM7.96967 12.5303L11.9697 16.5303L13.0303 15.4697L9.03033 11.4697L7.96967 12.5303ZM13.0303 16.5303L21.0303 8.53033L19.9697 7.46967L11.9697 15.4697L13.0303 16.5303Z";
+  const MsgTick = ({ status }) => {
+    if (status === 'delivered')
+      return <svg width="14" height="14" viewBox="0 0 25 25" fill="none" className="inline-block ml-0.5 flex-shrink-0"><path d={doublePath} fill="#9E9E9E" /></svg>;
+    if (status === 'read')
+      return <svg width="14" height="14" viewBox="0 0 25 25" fill="none" className="inline-block ml-0.5 flex-shrink-0"><path d={doublePath} fill="#53BDEB" /></svg>;
+    return <svg width="12" height="14" viewBox="0 -0.5 25 25" fill="none" className="inline-block ml-0.5 flex-shrink-0"><path d="M5.5 12.5L10.167 17L19.5 8" stroke="#9E9E9E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+  };
+
   return (
     <div className="flex h-[calc(100vh-8rem)] bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
 
@@ -174,8 +186,8 @@ export default function Chat() {
                   className={`p-4 hover:bg-gray-100 cursor-pointer transition-colors ${activeSession === chat.id ? 'bg-primary bg-opacity-10 border-l-4 border-primary' : 'border-l-4 border-transparent'}`}
                   onClick={() => {
                     setActiveSession(chat.id);
-                    // Mark all customer messages in this session as delivered when admin opens them
-                    markMessagesDelivered(chat.id);
+                    // Admin opened this session → mark all their messages as READ (blue ticks)
+                    markMessagesRead(chat.id);
                   }}
                 >
                   <div className="flex justify-between items-start mb-1">
@@ -234,10 +246,12 @@ export default function Chat() {
                       ? 'bg-[#dcf8c6] text-gray-900 rounded-lg rounded-tr-none'
                       : 'bg-white border border-gray-100 text-gray-900 rounded-lg rounded-tl-none'
                       }`}>
-                      <p className="mb-2 whitespace-pre-wrap">{msg.text}</p>
-                      <span className={`text-[10px] absolute bottom-1 right-2 ${msg.sender === 'admin' ? 'text-green-800' : 'text-gray-400'}`}>
-                        {formatTime(new Date(msg.created_at))}
-                      </span>
+                      <p className="mb-1 whitespace-pre-wrap">{msg.text}</p>
+                      <div className={`flex items-center justify-end gap-0.5 ${msg.sender === 'admin' ? 'text-green-800' : 'text-gray-400'}`}>
+                        <span className="text-[10px]">{formatTime(new Date(msg.created_at))}</span>
+                        {/* Admin's outgoing messages show delivery/read status ticks */}
+                        {msg.sender === 'admin' && <MsgTick status={msg.status || 'sent'} />}
+                      </div>
                     </div>
                   </div>
                 ))

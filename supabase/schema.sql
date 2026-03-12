@@ -256,6 +256,34 @@ using (
   )
 );
 
+-- Admin can update message status (delivered, read) — REQUIRED for read receipts
+drop policy if exists "Admin can update message status" on messages;
+create policy "Admin can update message status"
+on messages for update
+using (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+)
+with check (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+);
+
+-- Customer can update status of ADMIN messages in their own session
+-- This enables the admin outgoing tick to change when customer reads the message
+drop policy if exists "Customer can mark admin messages as read" on messages;
+create policy "Customer can mark admin messages as read"
+on messages for update
+using (
+  user_id = auth.uid() AND sender = 'admin'
+)
+with check (
+  user_id = auth.uid() AND sender = 'admin'
+);
+
+-- Enable REPLICA IDENTITY FULL so Realtime broadcasts UPDATE events (not just INSERT)
+alter table messages replica identity full;
+
+
+
 -- ==============================================================================
 -- 6. AUTHENTICATION TRIGGERS (Auto-Role Assignment)
 -- ==============================================================================
