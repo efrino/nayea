@@ -86,19 +86,20 @@ export default function LoginModal() {
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-br from-primary to-primary-dark px-6 pt-8 pb-10 text-white text-center relative">
+        <div className="bg-gradient-to-br from-gray-900 to-black px-6 pt-10 pb-12 text-white text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <button
             onClick={closeLoginModal}
-            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+            className="absolute top-6 right-6 text-white/40 hover:text-white transition-all p-2 rounded-full hover:bg-white/5 active:scale-90"
           >
             <X className="w-5 h-5" />
           </button>
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+          <div className="w-16 h-16 bg-white/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 backdrop-blur-md border border-white/10 shadow-2xl">
             <Lock className="w-7 h-7 text-white" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight">Masuk ke Nayea.id</h2>
+          <h2 className="text-2xl font-black font-heading tracking-tighter italic uppercase leading-none">Access Nayea</h2>
           {hint && HINT_TEXT[hint] && (
-            <p className="text-white/80 text-sm mt-1">Login diperlukan {HINT_TEXT[hint]}.</p>
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">Identity required {HINT_TEXT[hint]}</p>
           )}
         </div>
 

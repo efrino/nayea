@@ -274,76 +274,81 @@ export default function ChatWidget() {
   return (
     <>
       {!isOpen && (
-        // Wrapper span needed — 'relative fixed' is a Tailwind conflict
-        <span className="fixed bottom-6 right-4 sm:right-6 z-50">
+        <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 animate-in fade-in zoom-in duration-300">
           <button
             onClick={() => setIsOpen(true)}
-            className="relative bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:bg-[#128C7E] transition-all transform hover:scale-110 flex items-center justify-center"
+            className="group relative bg-[#25D366] text-white p-4 sm:p-5 rounded-[1.5rem] shadow-2xl hover:bg-[#128C7E] transition-all transform hover:scale-110 flex items-center justify-center active:scale-90"
           >
-            <MessageCircle className="w-7 h-7" fill="currentColor" />
+            <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8" fill="currentColor" />
             {unseenCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow-md ring-2 ring-white">
+              <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white">
                 {unseenCount > 9 ? '9+' : unseenCount}
               </span>
             )}
+            {/* Soft pulse effect */}
+            <div className="absolute inset-0 rounded-[1.5rem] bg-[#25D366] animate-ping opacity-20 group-hover:opacity-0 transition-opacity" />
           </button>
-        </span>
+        </div>
       )}
 
       {isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] max-w-sm sm:w-96 bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200 transition-all" style={{ maxHeight: 'min(600px, 85vh)' }}>
+        <div className="fixed bottom-0 right-0 sm:bottom-8 sm:right-8 w-full sm:w-[400px] h-[100dvh] sm:h-[650px] sm:max-h-[85vh] bg-white sm:rounded-[2.5rem] shadow-2xl flex flex-col z-[100] overflow-hidden animate-in slide-in-from-bottom-5 duration-300 border border-gray-100">
 
-          {/* Header (WA WA) */}
-          <div className="bg-[#075E54] p-3 flex justify-between items-center text-white shadow-sm z-10">
-            <div className="flex items-center space-x-3">
+          {/* Header */}
+          <div className="bg-[#075E54] px-6 py-5 flex justify-between items-center text-white relative shadow-lg">
+            <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white font-black font-heading text-lg backdrop-blur-md">
                   N
                 </div>
-                {user && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-[#075E54] rounded-full"></div>}
+                {user && <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 border-4 border-[#075E54] rounded-full shadow-sm"></div>}
               </div>
               <div>
-                <h3 className="font-semibold text-[15px] leading-tight">Nayea.id Support</h3>
-                <p className="text-xs text-white/80">{user ? 'Online' : 'Chat requires login'}</p>
+                <h3 className="font-black font-heading text-lg leading-none tracking-tight italic">NAYEA SUPPORT</h3>
+                <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest mt-1 italic flex items-center gap-1.5">
+                  {user ? (
+                    <><span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" /> Online Ready</>
+                  ) : 'Login Required'}
+                </p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white hover:text-white/80 transition-colors p-2">
-              <X className="w-5 h-5" />
+            <button onClick={() => setIsOpen(false)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-2xl transition-all active:scale-90">
+              <X className="w-6 h-6" />
             </button>
           </div>
 
           {!user ? (
             /* Unauthenticated View */
-            <div className="flex-1 p-6 h-80 bg-[#ECE5DD] flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400">
-                <Lock className="w-8 h-8" />
+            <div className="flex-1 p-10 bg-[#ECE5DD] flex flex-col items-center justify-center space-y-6 text-center">
+              <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center shadow-xl text-gray-300 border border-gray-50">
+                <Lock className="w-10 h-10" />
               </div>
-              <div>
-                <h4 className="font-semibold text-gray-800 text-lg">Chat Terkunci</h4>
-                <p className="text-sm text-gray-600 mt-2">Silakan masuk ke akun Anda terlebih dahulu untuk memulai obrolan dengan admin.</p>
+              <div className="space-y-2">
+                <h4 className="font-black font-heading text-2xl text-gray-900 tracking-tight italic uppercase">Chat Terkunci</h4>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-[240px] mx-auto">Silakan masuk ke akun Anda untuk memulai obrolan personal.</p>
               </div>
               <Link
                 to="/login"
                 onClick={() => setIsOpen(false)}
-                className="mt-4 bg-[#25D366] text-white px-6 py-2 rounded-full font-medium hover:bg-[#128C7E] transition-colors shadow-sm"
+                className="gradient-primary text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
               >
-                Login ke Akun
+                Login Sekarang
               </Link>
             </div>
           ) : (
             /* Authenticated View */
             <>
-              {/* Messages Area — flex-1 min-h-0 enables proper scroll within flex parent */}
-              <div className="flex-1 min-h-0 p-4 overflow-y-auto bg-[#ECE5DD] flex flex-col space-y-3">
+              {/* Messages Area */}
+              <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto bg-[#ECE5DD] flex flex-col space-y-4">
                 {chatLog.map((chat) => (
                   <div key={chat.id} className={`flex ${chat.sender === 'customer' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`relative max-w-[85%] px-3 py-2 text-[14.5px] shadow-sm ${chat.sender === 'customer'
-                      ? 'bg-[#E2FFC7] text-gray-900 rounded-lg rounded-tr-none'
-                      : 'bg-white text-gray-900 rounded-lg rounded-tl-none'
+                    <div className={`relative max-w-[85%] px-4 py-3 shadow-md ${chat.sender === 'customer'
+                      ? 'bg-[#E2FFC7] text-gray-900 rounded-[1.2rem] rounded-tr-none'
+                      : 'bg-white text-gray-900 rounded-[1.2rem] rounded-tl-none'
                       }`}>
-                      <p className="mb-1 whitespace-pre-wrap leading-snug text-gray-800">{chat.text}</p>
-                      <div className="flex items-center justify-end gap-0.5">
-                        <span className="text-[10px] text-gray-400">
+                      <p className="text-sm leading-relaxed font-medium text-gray-800 whitespace-pre-wrap">{chat.text}</p>
+                      <div className="flex items-center justify-end gap-1 mt-1 opacity-60">
+                        <span className="text-[9px] font-bold text-gray-500 italic">
                           {formatTime(chat.created_at)}
                         </span>
                         {chat.sender === 'customer' && <MessageStatus status={resolveStatus(chat)} />}
@@ -355,45 +360,41 @@ export default function ChatWidget() {
               </div>
 
               {/* Quick Reply Chips */}
-              {user && (
-                <div className="px-3 py-2 bg-[#F0F0F0] border-t border-gray-200/80">
-                  <div className="flex items-center gap-1 mb-1.5 text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
-                    <Package className="w-3 h-3" />
-                    Pertanyaan Cepat
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                    {quickReplies.map((reply, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setMessage(reply)}
-                        className="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-[#25D366] hover:text-[#075E54] hover:bg-green-50 transition-colors whitespace-nowrap shadow-sm flex items-center gap-1"
-                      >
-                        {reply}
-                        <ChevronRight className="w-3 h-3 opacity-50" />
-                      </button>
-                    ))}
-                  </div>
+              <div className="px-4 py-3 bg-white/80 backdrop-blur-md border-t border-gray-50">
+                <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] italic">
+                  <Package className="w-4 h-4 text-primary" />
+                  Quick Reply
                 </div>
-              )}
+                <div className="flex gap-2.5 overflow-x-auto pb-1 hide-scrollbar -mx-4 px-4">
+                  {quickReplies.map((reply, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setMessage(reply)}
+                      className="flex-shrink-0 text-[11px] px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-100 text-gray-600 font-bold hover:border-primary hover:text-primary hover:bg-primary/5 transition-all whitespace-nowrap shadow-sm active:scale-95"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              {/* Input Area (WA Style) */}
-              <div className="p-2.5 bg-[#F0F0F0] flex items-center shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
-                <form onSubmit={handleSend} className="flex-1 flex space-x-2">
+              {/* Input Area */}
+              <div className="p-4 bg-white border-t border-gray-50 flex items-center">
+                <form onSubmit={handleSend} className="flex-1 flex gap-3">
                   <input
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Ketik pesan..."
-                    className="flex-1 bg-white border-0 rounded-full px-5 py-3 text-[15px] focus:outline-none focus:ring-1 focus:ring-green-500 shadow-sm"
+                    placeholder="Tulis pesan..."
+                    className="flex-1 bg-gray-50 border-transparent rounded-2xl px-5 py-3.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder-gray-400"
                   />
                   <button
                     type="submit"
                     disabled={!message.trim()}
-                    className="bg-[#00A884] text-white p-3 rounded-full hover:bg-[#008f6f] disabled:opacity-50 disabled:bg-gray-400 transition-colors shadow-sm flex items-center justify-center w-12 h-12 flex-shrink-0"
-                    aria-label="Kirim Pesan"
+                    className="gradient-primary text-white p-4 rounded-2xl hover:shadow-xl hover:shadow-primary/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center w-14 h-14 active:scale-90"
                   >
-                    <Send className="w-5 h-5 ml-1" />
+                    <Send className="w-6 h-6 ml-1" />
                   </button>
                 </form>
               </div>
