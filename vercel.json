@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/(api|auth/callback|admin.*|catalog.*|product.*|cart|wishlist|checkout|login|register)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api|auth/callback|admin|catalog|product|cart|wishlist|checkout|login|register|assets|_next|static|favicon.ico|sw.js).*)$",
+      "destination": "/index.html"
+    }
+  ]
+}

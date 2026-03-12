@@ -19,8 +19,8 @@ export default function AuthCallback() {
       }
 
       if (data?.session) {
-        // Successful login, redirect to home or previous page
-        navigate('/');
+        // Successful login, redirect to home with success flag
+        navigate('/?login=success');
       } else {
         // No session found, redirect to login
         navigate('/login');

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ShoppingBag, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ChevronLeft, ChevronRight, Package, CheckCircle2, X } from 'lucide-react';
 import { getProducts, getBanners } from '../../services/api';
 
 // Check if the URL is an HTML5 video format that needs a <video> tag to loop
@@ -16,6 +16,8 @@ export default function Home() {
   const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false);
+
   useEffect(() => {
     async function fetchData() {
       const [productsRes, bannersRes] = await Promise.all([
@@ -29,6 +31,19 @@ export default function Home() {
       setLoading(false);
     }
     fetchData();
+
+    // Check for login success flag
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === 'success') {
+      setShowLoginSuccess(true);
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Auto-hide after 5s
+      const timer = setTimeout(() => setShowLoginSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Auto-rotate banners every 5 seconds
@@ -277,6 +292,27 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Login Success Notification */}
+      {showLoginSuccess && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-8 duration-500">
+          <div className="bg-gray-900/90 backdrop-blur-2xl border border-white/10 px-8 py-5 rounded-[2rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex items-center gap-4">
+            <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20">
+               <CheckCircle2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic mb-0.5">Authentication Successful</p>
+              <h4 className="text-white font-black font-heading italic uppercase tracking-tight">Welcome to Nayea Collective</h4>
+            </div>
+            <button 
+              onClick={() => setShowLoginSuccess(false)}
+              className="ml-4 p-2 text-white/30 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
