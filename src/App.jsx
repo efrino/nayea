@@ -12,6 +12,9 @@ import StoreLogin from './pages/storefront/StoreLogin';
 import StoreRegister from './pages/storefront/StoreRegister';
 import LoginModal from './components/auth/LoginModal';
 
+import AuthCallback from './pages/auth/AuthCallback';
+import NotFound from './pages/NotFound';
+
 // Admin Imports
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminLayout from './components/layout/AdminLayout';
@@ -32,6 +35,9 @@ function App() {
           <LoginModal />
 
           <Routes>
+            {/* Auth Callback Route */}
+            <Route path="/auth/callback" element={<AuthCallback />} />
+
             {/* Storefront Routes */}
             <Route path="/" element={<StoreLayout />}>
               <Route index element={<Home />} />
@@ -56,6 +62,9 @@ function App() {
               <Route path="banners" element={<Banners />} />
               <Route path="chat" element={<Chat />} />
             </Route>
+
+            {/* Catch-all 404 Page */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>
