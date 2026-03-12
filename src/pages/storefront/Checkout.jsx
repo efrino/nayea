@@ -1,15 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { createOrder } from '../../services/api';
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { cartItems, getCartTotal, clearCart } = useCart();
+  const { user, openLoginModal } = useAuth();
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Gate: if no user, show login modal immediately (but don't navigate away)
+  useEffect(() => {
+    if (!user) {
+      openLoginModal(null, 'checkout');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // From data
   const [formData, setFormData] = useState({
@@ -31,6 +41,10 @@ export default function Checkout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      openLoginModal(null, 'checkout');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -38,7 +52,8 @@ export default function Checkout() {
         customer_name: formData.name,
         customer_phone: formData.phone,
         total_amount: getCartTotal(),
-        status: 'pending'
+        status: 'pending',
+        user_id: user.id,
       };
 
       const { data, error } = await createOrder(orderData, cartItems);

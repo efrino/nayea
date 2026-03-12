@@ -18,12 +18,8 @@ export default function ChatWidget() {
 
   const { user } = useAuth(); // Customer must be logged in
 
-  // Hide widget if the logged-in user is an Admin
-  // NOTE: isAdmin check is AFTER all hooks to satisfy React Rules of Hooks
+  // Admin check is used later to prevent rendering the UI
   const isAdmin = user?.user_metadata?.role === 'admin';
-
-  // Return null AFTER all hooks (Rules of Hooks)
-  if (isAdmin) return null;
 
   // Detect product page
   useEffect(() => {
@@ -271,6 +267,9 @@ export default function ChatWidget() {
       </svg>
     );
   };
+
+  // Return null AFTER all hooks (Rules of Hooks)
+  if (isAdmin) return null;
 
   return (
     <>

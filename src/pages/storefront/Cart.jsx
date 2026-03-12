@@ -1,10 +1,46 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Trash2, ShoppingBag } from 'lucide-react';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Trash2, ShoppingBag, Lock } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Cart() {
+  const navigate = useNavigate();
   const { cartItems, loadingCart, removeFromCart, updateQuantity, getCartTotal } = useCart();
+  const { user, openLoginModal } = useAuth();
   const subtotal = getCartTotal();
+
+  // Gate: if no user, show login modal immediately when cart is visited
+  useEffect(() => {
+    if (!user) {
+      openLoginModal(null, 'keranjang');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Guest view — locked state (modal also opens automatically above)
+  if (!user) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-8">Keranjang Belanja</h1>
+          <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Lock className="w-10 h-10 text-primary" />
+            </div>
+            <h2 className="text-2xl font-medium text-gray-900 mb-2">Login untuk melihat keranjang</h2>
+            <p className="text-gray-500 mb-8">Daftar atau masuk ke akun untuk menyimpan dan melihat item di keranjang belanja Anda.</p>
+            <button
+              onClick={() => openLoginModal(null, 'keranjang')}
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-primary hover:bg-primary-dark transition-colors"
+            >
+              Masuk / Daftar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen py-12">
@@ -125,10 +161,23 @@ export default function Cart() {
               </dl>
 
               <div className="mt-6">
-                <Link to="/checkout" className="w-full bg-primary hover:bg-primary-dark transition-colors border border-transparent rounded-full shadow-sm py-4 px-4 text-base font-medium text-white flex justify-center items-center">
-                  Checkout
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
+                {user ? (
+                  <Link
+                    to="/checkout"
+                    className="w-full bg-primary hover:bg-primary-dark transition-colors border border-transparent rounded-full shadow-sm py-4 px-4 text-base font-medium text-white flex justify-center items-center"
+                  >
+                    Checkout
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => openLoginModal(() => navigate('/checkout'), 'checkout')}
+                    className="w-full bg-primary hover:bg-primary-dark transition-colors border border-transparent rounded-full shadow-sm py-4 px-4 text-base font-medium text-white flex justify-center items-center"
+                  >
+                    Checkout
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
 

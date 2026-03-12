@@ -8,7 +8,7 @@ import { addToCart, toggleWishlist, getWishlists } from '../../services/api';
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, openLoginModal } = useAuth();
   const user = session?.user;
 
   const [product, setProduct] = useState(null);
@@ -70,7 +70,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = async () => {
     if (!user) {
-      navigate('/login');
+      openLoginModal(() => handleAddToCart(), 'keranjang');
       return;
     }
     if (product.colors && product.colors.length > 0 && !selectedColor) {
@@ -95,7 +95,7 @@ export default function ProductDetail() {
 
   const handleToggleWishlist = async () => {
     if (!user) {
-      navigate('/login');
+      openLoginModal(() => handleToggleWishlist(), 'wishlist');
       return;
     }
     const { added, error } = await toggleWishlist(user.id, product.id);
@@ -109,7 +109,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (!user) {
-      navigate('/login');
+      openLoginModal(() => handleBuyNow(), 'checkout');
       return;
     }
     if (product.colors && product.colors.length > 0 && !selectedColor) {

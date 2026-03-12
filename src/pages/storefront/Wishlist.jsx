@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Trash2, ShoppingBag } from 'lucide-react';
+import { Heart, Trash2, ShoppingBag, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getWishlists, toggleWishlist } from '../../services/api';
 
 export default function Wishlist() {
-    const { session } = useAuth();
+    const { session, openLoginModal } = useAuth();
     const user = session?.user;
 
     const [wishlistItems, setWishlistItems] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Gate: if no user, show login modal immediately when wishlist is visited
+    useEffect(() => {
+        if (!user) {
+            openLoginModal(null, 'wishlist');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     useEffect(() => {
         fetchWishlist();
@@ -37,14 +45,28 @@ export default function Wishlist() {
         }
     };
 
+    // Guest view — locked state (modal also opens automatically above)
     if (!user) {
         return (
-            <div className="bg-gray-50 min-h-screen py-12 flex justify-center items-center">
-                <div className="text-center bg-white p-12 rounded-3xl shadow-sm">
-                    <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Harap Login Terlebih Dahulu</h2>
-                    <p className="text-gray-500 mb-8">Anda harus masuk ke akun Anda untuk melihat dan menyimpan Wishlist.</p>
-                    <Link to="/login" className="inline-block px-8 py-3 bg-primary text-white rounded-full font-semibold hover:bg-primary-dark transition-colors">Login Sekarang</Link>
+            <div className="bg-gray-50 min-h-screen py-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-8 flex items-center gap-3">
+                        <Heart className="w-8 h-8 text-primary fill-current" />
+                        Wishlist Saya
+                    </h1>
+                    <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                            <Lock className="w-10 h-10 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-medium text-gray-900 mb-2">Login untuk melihat wishlist</h2>
+                        <p className="text-gray-500 mb-8">Daftar atau masuk ke akun untuk menyimpan dan melihat produk favorit Anda.</p>
+                        <button
+                            onClick={() => openLoginModal(null, 'wishlist')}
+                            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-primary hover:bg-primary-dark transition-colors"
+                        >
+                            Masuk / Daftar
+                        </button>
+                    </div>
                 </div>
             </div>
         );

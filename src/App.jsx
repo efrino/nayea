@@ -10,6 +10,7 @@ import Wishlist from './pages/storefront/Wishlist';
 import Checkout from './pages/storefront/Checkout';
 import StoreLogin from './pages/storefront/StoreLogin';
 import StoreRegister from './pages/storefront/StoreRegister';
+import LoginModal from './components/auth/LoginModal';
 
 // Admin Imports
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -26,6 +27,9 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
+          {/* Global Login Modal — must be inside BrowserRouter for Link/useNavigate */}
+          <LoginModal />
+
           <Routes>
             {/* Storefront Routes */}
             <Route path="/" element={<StoreLayout />}>
