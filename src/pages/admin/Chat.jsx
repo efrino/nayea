@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Search, MessageCircle } from 'lucide-react';
+import { Send, Search, MessageCircle, MoreHorizontal, Phone, Video, User, Check, CheckCheck, Smile, Paperclip } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getMessages, sendMessage, markMessagesDelivered, markMessagesRead, markAllMessagesDelivered } from '../../services/api';
 
@@ -16,37 +16,19 @@ export default function Chat() {
   }, [activeSession]);
 
   useEffect(() => {
-    // 1. Initial Load: Fetch ALL admin messages from all sessions
     const fetchAllMessages = async () => {
-      const { data } = await getMessages(); // Passing no ID fetches all
-
+      const { data } = await getMessages();
       if (data) {
         setAllMessages(data);
-        // Admin is online — mark ALL pending 'sent' messages as 'delivered' across all sessions
         markAllMessagesDelivered();
-        // Set most recently active session
-        if (data.length > 0) {
-          const sessions = [...new Set(data.map(m => m.user_id))];
-          const sortedSessions = sessions.sort((a, b) => {
-            const lastA = data.filter(m => m.user_id === a).pop()?.created_at;
-            const lastB = data.filter(m => m.user_id === b).pop()?.created_at;
-            return new Date(lastB) - new Date(lastA);
-          });
-          // Do NOT auto-set activeSession to sortedSessions[0] to mimic WhatsApp's empty startup state
-        }
       }
     };
 
     fetchAllMessages();
 
-    // 2. Global WebSockets listener for ALL new messages
-    // Ensure "Replication" is enabled for "messages" table in Supabase Dashboard!
     const globalChannel = supabase
       .channel('admin_all_messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        console.log("Realtime message received!", payload.new);
-        
-        // Admin status marking for incoming customer messages
         if (payload.new.sender === 'customer') {
             if (activeSessionRef.current === payload.new.user_id) {
                 markMessagesRead(payload.new.user_id);
@@ -58,60 +40,32 @@ export default function Chat() {
         }
 
         setAllMessages(prev => {
-          // Cegah duplikasi jika dipicu secara optimistic
           if (prev.some(m => m.id === payload.new.id)) return prev;
-
-          // Jika pesan dikirim Admin lewat WS, pastikan 'sent' status ada
           let newMsg = { ...payload.new };
           if (newMsg.sender === 'admin' && !newMsg.status) {
               newMsg.status = 'sent';
           }
-
-          // Cari info Customer Name/Email dari histori pesan sebelumnya
           const existingUser = prev.find(m => m.user_id === payload.new.user_id && m.customer_email);
           if (existingUser) {
-            const enrichedMsg = {
-              ...newMsg,
-              customer_name: existingUser.customer_name,
-              customer_email: existingUser.customer_email
-            };
-            return [...prev, enrichedMsg];
+            return [...prev, { ...newMsg, customer_name: existingUser.customer_name, customer_email: existingUser.customer_email }];
           } else {
-            // Pengguna baru pertama kali chat, tarik tabel ulang dari RPC
             fetchAllMessages();
             return prev;
           }
         });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-        // Update local message status when admin updates status (DB Fallback)
         setAllMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, status: payload.new.status } : m));
       })
-      .subscribe((status, err) => {
-        if (err) console.error("Realtime subscription error:", err);
-      });
-
-    // Listen to ALL customer broadcasts globally
-    // We map over unique sessions to subscribe to their presence channels
-    // Alternatively, listening dynamically as sessions appear.
-    // For simplicity, we just use the DB listener as the source of truth for all sessions,
-    // but we can manually subscribe to active ones. However, a catch-all broadcast isn't possible
-    // without matching topic. We will subscribe to `chat_presense:*` using a trick:
-    // Supabase allows wildcard listening if you just use a single global room for all users,
-    // But since we split it, we dynamically manage it below.
-    const presenceChannels = {};
+      .subscribe();
 
     return () => {
       supabase.removeChannel(globalChannel);
     };
   }, []);
 
-  // Dynamically manage presence channels for snappy updates
   useEffect(() => {
      const uniqueSessions = [...new Set(allMessages.map(m => m.user_id))];
-     const channelsToKeep = new Set(uniqueSessions);
-     
-     // Note: We avoid creating 1000 channels, limit to active ones if needed, but for small shop it's fine
      uniqueSessions.forEach(userId => {
         if (!window[`__ch_${userId}`]) {
            window[`__ch_${userId}`] = supabase.channel(`chat_presense:${userId}`)
@@ -124,16 +78,10 @@ export default function Chat() {
              .subscribe();
         }
      });
-
-     return () => {
-        // In a real app we'd clean up inactive ones, but for now we keep them open
-     };
   }, [allMessages.length]);
 
-  // Filter ONLY active session's messages
   const activeMessages = allMessages.filter(m => m.user_id === activeSession);
 
-  // Auto-scroll when activeMessages changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeMessages.length, activeSession]);
@@ -148,7 +96,6 @@ export default function Chat() {
       text: messageText.trim()
     };
 
-    // Optimistic UI Update for Snappy feel
     const tempId = crypto.randomUUID();
     const optimisticMsg = { id: tempId, created_at: new Date().toISOString(), status: 'sent', ...newMsg };
 
@@ -157,15 +104,12 @@ export default function Chat() {
 
     const { data, error } = await sendMessage(newMsg);
     if (!error && data) {
-      // Replace optimistic ID with Real DB ID
       setAllMessages(prev => prev.map(m => m.id === tempId ? data : m));
-      // Mark all customer messages in this session as read since admin has replied
       markMessagesRead(activeSession);
       supabase.channel(`chat_presense:${activeSession}`).send({ type: 'broadcast', event: 'admin_read', payload: {} });
     }
   };
 
-  // Build Whatsapp-like Sidebar Data
   const sessionMap = {};
   allMessages.forEach(msg => {
     if (!sessionMap[msg.user_id]) sessionMap[msg.user_id] = [];
@@ -175,26 +119,21 @@ export default function Chat() {
   const sidebarSessions = Object.keys(sessionMap).map(uid => {
     const msgs = sessionMap[uid];
     const lastMsg = msgs[msgs.length - 1];
-    // We extract the actual name and email from the RPC response.
-    // For messages created via optimistic UI, they might not have it until re-fetch,
-    // so we scan backwards for the first valid metadata if needed.
     const msgWithMeta = msgs.slice().reverse().find(m => m.customer_name || m.customer_email) || {};
-    // Count unread customer messages (status !== 'read' means admin hasn't opened yet)
-    // ONLY count if sender is customer.
     const unreadCount = msgs.filter(m => m.sender === 'customer' && m.status !== 'read').length;
 
     return {
       id: uid,
       customerName: msgWithMeta.customer_name || 'Customer',
-      customerEmail: msgWithMeta.customer_email || 'customer@example.com',
+      customerEmail: msgWithMeta.customer_email || 'No email',
       lastMessage: lastMsg.text,
-      lastMessageStatus: lastMsg.status || 'delivered', // Fallback
+      lastMessageStatus: lastMsg.status || 'delivered',
       sender: lastMsg.sender,
       createdAt: new Date(lastMsg.created_at),
       timestamp: new Date(lastMsg.created_at).getTime(),
       unreadCount,
     };
-  }).sort((a, b) => b.timestamp - a.timestamp); // Sort By Latest (Bumps to top like WA)
+  }).sort((a, b) => b.timestamp - a.timestamp);
 
   const filteredSessions = sidebarSessions.filter(s =>
     s.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -207,166 +146,190 @@ export default function Chat() {
 
   const formatSidebarTime = (dateObj) => {
     const now = new Date();
-    const isToday = dateObj.getDate() === now.getDate() && dateObj.getMonth() === now.getMonth() && dateObj.getFullYear() === now.getFullYear();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    const isYesterday = dateObj.getDate() === yesterday.getDate() && dateObj.getMonth() === yesterday.getMonth() && dateObj.getFullYear() === yesterday.getFullYear();
-
-    if (isToday) {
-      return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (isYesterday) {
-      return 'Kemarin';
-    } else {
-      return dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
+    const isToday = dateObj.toLocaleDateString() === now.toLocaleDateString();
+    if (isToday) return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
   };
 
-  // Shared SVG tick component (same paths as ChatWidget for consistency)
-  const doublePath = "M5.03033 11.4697C4.73744 11.1768 4.26256 11.1768 3.96967 11.4697C3.67678 11.7626 3.67678 12.2374 3.96967 12.5303L5.03033 11.4697ZM8.5 16L7.96967 16.5303C8.26256 16.8232 8.73744 16.8232 9.03033 16.5303L8.5 16ZM17.0303 8.53033C17.3232 8.23744 17.3232 7.76256 17.0303 7.46967C16.7374 7.17678 16.2626 7.17678 15.9697 7.46967L17.0303 8.53033ZM9.03033 11.4697C8.73744 11.1768 8.26256 11.1768 7.96967 11.4697C7.67678 11.7626 7.67678 12.2374 7.96967 12.5303L9.03033 11.4697ZM12.5 16L11.9697 16.5303C12.2626 16.8232 12.7374 16.8232 13.0303 16.5303L12.5 16ZM21.0303 8.53033C21.3232 8.23744 21.3232 7.76256 21.0303 7.46967C20.7374 7.17678 20.2626 7.17678 19.9697 7.46967L21.0303 8.53033ZM3.96967 12.5303L7.96967 16.5303L9.03033 15.4697L5.03033 11.4697L3.96967 12.5303ZM9.03033 16.5303L17.0303 8.53033L15.9697 7.46967L7.96967 15.4697L9.03033 16.5303ZM7.96967 12.5303L11.9697 16.5303L13.0303 15.4697L9.03033 11.4697L7.96967 12.5303ZM13.0303 16.5303L21.0303 8.53033L19.9697 7.46967L11.9697 15.4697L13.0303 16.5303Z";
   const MsgTick = ({ status }) => {
-    if (status === 'delivered')
-      return <svg width="14" height="14" viewBox="0 0 25 25" fill="none" className="inline-block ml-0.5 flex-shrink-0"><path d={doublePath} fill="#9E9E9E" /></svg>;
-    if (status === 'read')
-      return <svg width="14" height="14" viewBox="0 0 25 25" fill="none" className="inline-block ml-0.5 flex-shrink-0"><path d={doublePath} fill="#53BDEB" /></svg>;
-    return <svg width="12" height="14" viewBox="0 -0.5 25 25" fill="none" className="inline-block ml-0.5 flex-shrink-0"><path d="M5.5 12.5L10.167 17L19.5 8" stroke="#9E9E9E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+    if (status === 'read') return <CheckCheck className="w-3.5 h-3.5 text-blue-400" strokeWidth={3} />;
+    if (status === 'delivered') return <CheckCheck className="w-3.5 h-3.5 text-gray-300" strokeWidth={3} />;
+    return <Check className="w-3.5 h-3.5 text-gray-300" strokeWidth={3} />;
   };
+
+  const activeCustomer = sidebarSessions.find(s => s.id === activeSession);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-
-      {/* Sidebar / Chat List */}
-      <div className="w-1/3 md:w-80 border-r border-gray-200 flex flex-col bg-gray-50 flex-shrink-0">
-        <div className="p-4 border-b border-gray-200 bg-white">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              placeholder="Cari Customer..."
-            />
-          </div>
+    <div className="flex h-[calc(100vh-10rem)] bg-white rounded-[2.5rem] shadow-premium border border-gray-50 overflow-hidden">
+      
+      {/* Sidebar - Contacts */}
+      <div className="w-full md:w-80 lg:w-96 border-r border-gray-50 flex flex-col bg-gray-50/30">
+        <div className="p-8">
+           <h3 className="text-2xl font-black font-heading text-gray-900 mb-6 italic tracking-tight">INBOX</h3>
+           <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari percakapan..."
+                className="w-full pl-12 pr-6 py-4 rounded-2xl bg-white border border-transparent shadow-sm focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
+              />
+           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {sidebarSessions.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-500">Belum ada obrolan.</div>
+        <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-2 no-scrollbar">
+          {filteredSessions.length === 0 ? (
+            <div className="py-10 text-center">
+               <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-100" />
+               <p className="text-xs text-gray-400 font-bold uppercase tracking-widest italic">Belum ada Chat</p>
+            </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
-              {filteredSessions.map((chat) => (
-                <li
-                  key={chat.id}
-                  className={`p-4 hover:bg-gray-100 cursor-pointer transition-colors ${activeSession === chat.id ? 'bg-primary bg-opacity-10 border-l-4 border-primary' : 'border-l-4 border-transparent'}`}
-                  onClick={() => {
-                    setActiveSession(chat.id);
-                    // Admin opened this session → mark all their messages as READ (blue ticks)
-                    markMessagesRead(chat.id);
-                    supabase.channel(`chat_presense:${chat.id}`).send({ type: 'broadcast', event: 'admin_read', payload: {} });
-                  }}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className={`text-sm font-medium ${activeSession === chat.id ? 'text-primary' : 'text-gray-900'} truncate`}>
-                      {chat.customerName}
-                    </h3>
-                    <span className="text-xs text-gray-500 w-[70px] text-right flex-shrink-0">{formatSidebarTime(chat.createdAt)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-gray-500 truncate pr-2 flex items-center">
-                      {chat.sender === 'admin' && (
-                        <span className="mr-1 inline-flex items-center">
-                           <MsgTick status={chat.lastMessageStatus} />
-                        </span>
-                      )}
-                      <span className="truncate">{chat.lastMessage}</span>
-                    </p>
-                    {chat.unreadCount > 0 && (
-                      <span className="flex-shrink-0 bg-[#25D366] text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
-                        {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
+            filteredSessions.map((chat) => (
+              <div
+                key={chat.id}
+                onClick={() => {
+                  setActiveSession(chat.id);
+                  markMessagesRead(chat.id);
+                  supabase.channel(`chat_presense:${chat.id}`).send({ type: 'broadcast', event: 'admin_read', payload: {} });
+                }}
+                className={`p-4 rounded-3xl cursor-pointer transition-all duration-300 flex items-center gap-4 group ${activeSession === chat.id 
+                  ? 'bg-white shadow-premium border border-gray-50' 
+                  : 'hover:bg-white hover:shadow-sm border border-transparent'}`}
+              >
+                <div className="relative">
+                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-transform duration-500 ${activeSession === chat.id ? 'gradient-primary text-white rotate-6 scale-110 shadow-lg shadow-primary/20' : 'bg-white text-gray-300 shadow-inner group-hover:bg-indigo-50 group-hover:text-indigo-500'}`}>
+                      {chat.customerName.charAt(0).toUpperCase()}
+                   </div>
+                   {chat.unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-bounce-slow shadow-lg shadow-rose-200">
+                        {chat.unreadCount}
                       </span>
-                    )}
+                   )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-0.5">
+                    <p className={`text-sm font-black truncate ${activeSession === chat.id ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-900'}`}>
+                      {chat.customerName}
+                    </p>
+                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">{formatSidebarTime(chat.createdAt)}</span>
                   </div>
-                </li>
-              ))}
-            </ul>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                       {chat.sender === 'admin' && <MsgTick status={chat.lastMessageStatus} />}
+                       <p className="text-xs text-gray-400 truncate font-medium">{chat.lastMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
         {activeSession ? (
           <>
-            {/* Chat Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <div className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                  {sidebarSessions.find(s => s.id === activeSession)?.customerName.charAt(0).toUpperCase() || 'C'}
-                </div>
-                <div className="ml-3">
-                  <h2 className="text-sm font-bold text-gray-900">
-                    {sidebarSessions.find(s => s.id === activeSession)?.customerName || 'Customer'}
-                  </h2>
-                  <p className="text-xs text-green-600 font-medium">
-                    {sidebarSessions.find(s => s.id === activeSession)?.customerEmail || ''}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Chat History */}
-            <div className="flex-1 p-6 overflow-y-auto bg-[#e5ddd5] flex flex-col space-y-4 shadow-inner">
-              {activeMessages.length === 0 ? (
-                <div className="text-center text-sm text-gray-500 mt-10 bg-white/60 p-2 rounded-lg inline-block self-center">Mulai percakapan...</div>
-              ) : (
-                activeMessages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`relative max-w-[75%] px-4 py-2 text-sm shadow-md ${msg.sender === 'admin'
-                      ? 'bg-[#dcf8c6] text-gray-900 rounded-lg rounded-tr-none'
-                      : 'bg-white border border-gray-100 text-gray-900 rounded-lg rounded-tl-none'
-                      }`}>
-                      <p className="mb-1 whitespace-pre-wrap">{msg.text}</p>
-                      <div className={`flex items-center justify-end gap-0.5 ${msg.sender === 'admin' ? 'text-green-800' : 'text-gray-400'}`}>
-                        <span className="text-[10px]">{formatTime(new Date(msg.created_at))}</span>
-                        {/* Admin's outgoing messages show delivery/read status ticks */}
-                        {msg.sender === 'admin' && <MsgTick status={msg.status || 'delivered'} />}
-                      </div>
-                    </div>
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-white z-10">
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20">
+                     {activeCustomer?.customerName.charAt(0).toUpperCase()}
                   </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
+                  <div>
+                     <h3 className="text-lg font-black font-heading text-gray-900 tracking-tight leading-none">{activeCustomer?.customerName}</h3>
+                     <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> ONLINE
+                     </p>
+                  </div>
+               </div>
+               
+               <div className="flex items-center gap-2">
+                  <button className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"><Phone className="w-5 h-5" /></button>
+                  <button className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"><Video className="w-5 h-5" /></button>
+                  <button className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all ml-2"><MoreHorizontal className="w-5 h-5" /></button>
+               </div>
             </div>
 
-            {/* Chat Input */}
-            <div className="p-4 bg-gray-50 border-t border-gray-200">
-              <form className="flex space-x-3 items-center" onSubmit={handleSend}>
-                <input
-                  type="text"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Ketik balasan Anda..."
-                  className="flex-1 block w-full rounded-2xl border-gray-300 px-4 py-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border transition-shadow"
-                />
-                <button
-                  type="submit"
-                  disabled={!messageText.trim()}
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 transition-all transform active:scale-95"
-                >
-                  <Send className="h-5 w-5 ml-1" aria-hidden="true" />
-                </button>
-              </form>
+            {/* Chat Content */}
+            <div className="flex-1 p-8 overflow-y-auto no-scrollbar bg-[#FBFBFE] relative">
+               {/* Aesthetic Background Shapes */}
+               <div className="absolute top-1/4 left-10 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -z-10" />
+               <div className="absolute bottom-1/4 right-10 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] -z-10" />
+
+               <div className="flex flex-col space-y-6">
+                  {activeMessages.map((msg, idx) => {
+                     const isFirstInSeries = idx === 0 || activeMessages[idx - 1].sender !== msg.sender;
+                     return (
+                        <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                           <div className={`group relative max-w-[70%] ${msg.sender === 'admin' ? 'text-right' : 'text-left'}`}>
+                              <div className={`p-5 text-sm font-medium leading-relaxed transition-all ${msg.sender === 'admin'
+                                 ? 'bg-gray-900 text-white rounded-[2rem] rounded-tr-none shadow-xl shadow-gray-200'
+                                 : 'bg-white text-gray-800 rounded-[2rem] rounded-tl-none shadow-premium'
+                              }`}>
+                                 <p className="whitespace-pre-wrap">{msg.text}</p>
+                              </div>
+                              <div className={`mt-2 flex items-center gap-2 ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                                 <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
+                                    {formatTime(new Date(msg.created_at))}
+                                 </span>
+                                 {msg.sender === 'admin' && <MsgTick status={msg.status} />}
+                              </div>
+                           </div>
+                        </div>
+                     );
+                  })}
+                  <div ref={messagesEndRef} />
+               </div>
+            </div>
+
+            {/* Input Bar */}
+            <div className="px-8 py-6 bg-white border-t border-gray-50">
+               <form onSubmit={handleSend} className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                     <button type="button" className="p-3 text-gray-400 hover:text-primary transition-colors"><Smile className="w-6 h-6" /></button>
+                     <button type="button" className="p-3 text-gray-400 hover:text-primary transition-colors"><Paperclip className="w-6 h-6" /></button>
+                  </div>
+                  
+                  <div className="flex-1 relative flex items-center">
+                     <input
+                        type="text"
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        placeholder="Balas dengan cinta..."
+                        className="w-full pl-6 pr-14 py-4 rounded-[2rem] bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all shadow-inner"
+                     />
+                     <button 
+                        type="submit" 
+                        disabled={!messageText.trim()}
+                        className="absolute right-2 w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-black hover:scale-110 active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
+                     >
+                        <Send className="w-4 h-4 ml-0.5" />
+                     </button>
+                  </div>
+               </form>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-400">
-            <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4 text-gray-400">
-              <MessageCircle className="w-12 h-12" />
-            </div>
-            <p className="text-lg font-medium text-gray-600">Nayea.id Web Chat</p>
-            <p className="text-sm">Silakan pilih chat pada kolom di sebelah kiri.</p>
+          <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
+             <div className="relative mb-10">
+                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                <div className="relative w-32 h-32 bg-white rounded-[2.5rem] shadow-premium flex items-center justify-center border border-gray-50">
+                   <MessageCircle className="w-12 h-12 text-primary drop-shadow-sm" />
+                </div>
+             </div>
+             <h3 className="text-3xl font-black font-heading text-gray-900 italic tracking-tight">SIAP MELAYANI?</h3>
+             <p className="mt-4 text-gray-400 font-medium max-w-xs leading-relaxed">
+                Pilih salah satu percakapan di sebelah kiri untuk memberikan pelayanan terbaik bagi customer Nayea.id. 🌿
+             </p>
+             <div className="mt-10 flex items-center gap-3">
+                <div className="flex -space-x-3">
+                   {[1,2,3].map(i => <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400 shadow-sm overflow-hidden"><img src={`https://ui-avatars.com/api/?name=C${i}&background=random`} alt="C" /></div>)}
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Menunggu Respon Anda</p>
+             </div>
           </div>
         )}
       </div>

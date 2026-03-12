@@ -1,5 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Upload, XCircle, ArrowLeft, ArrowRight, Video } from 'lucide-react';
+import { 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  X, 
+  Upload, 
+  XCircle, 
+  ArrowLeft, 
+  ArrowRight, 
+  Video,
+  Package,
+  Layers,
+  Search,
+  ChevronRight,
+  Filter,
+  AlertCircle
+} from 'lucide-react';
 import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile } from '../../services/api';
 
 export default function Products() {
@@ -7,6 +23,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form State
   const [name, setName] = useState('');
@@ -15,19 +32,12 @@ export default function Products() {
   const [stock, setStock] = useState('0');
   const [isPreorder, setIsPreorder] = useState(false);
   const [weight, setWeight] = useState('500'); // grams
-
-  // Advanced Tokopedia-style Product Features
   const [material, setMaterial] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [colors, setColors] = useState([]);
   const [newColor, setNewColor] = useState('');
-
-  // Multi-Image Handling
-  const [mediaItems, setMediaItems] = useState([]); // Array of { isNew: boolean, url: string, file: File | null }
-
-  // Video Handling
+  const [mediaItems, setMediaItems] = useState([]); 
   const [videoFile, setVideoFile] = useState(null);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -95,14 +105,7 @@ export default function Products() {
       setMaterial(product.material || '');
       setVideoUrl(product.video_url || '');
       setColors(product.colors || []);
-
-      // Legacy support for single image_url vs new images array
-      let existingImages = [];
-      if (product.images && product.images.length > 0) {
-        existingImages = product.images;
-      } else if (product.image_url) {
-        existingImages = [product.image_url];
-      }
+      let existingImages = product.images && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : []);
       setMediaItems(existingImages.map(url => ({ isNew: false, url, file: null })));
       setVideoFile(null);
     } else {
@@ -116,7 +119,6 @@ export default function Products() {
       setMaterial('');
       setVideoUrl('');
       setColors([]);
-
       setMediaItems([]);
       setVideoFile(null);
     }
@@ -129,7 +131,6 @@ export default function Products() {
     setIsSubmitting(true);
 
     try {
-      // 1. Upload NEW images and video in parallel
       const uploadPromises = mediaItems.map(item => {
         if (item.isNew && item.file) {
           return uploadFile(item.file, 'products').then(res => {
@@ -137,7 +138,7 @@ export default function Products() {
             return res.url;
           });
         }
-        return Promise.resolve(item.url); // keep existing URL
+        return Promise.resolve(item.url);
       });
 
       let finalVideoUrl = videoUrl;
@@ -146,17 +147,14 @@ export default function Products() {
           uploadFile(videoFile, 'products').then(res => {
             if (res.error) throw res.error;
             finalVideoUrl = res.url;
-            return 'VIDEO_UPLOAD'; // marker flag
+            return 'VIDEO_UPLOAD';
           })
         );
       }
 
       const uploadResults = await Promise.all(uploadPromises);
-
-      // Separate image URLs from the video marker if it exists
       const finalImageArray = videoFile ? uploadResults.slice(0, -1) : uploadResults;
 
-      // 2. Save product to database with advanced fields
       const productData = {
         name,
         description,
@@ -168,7 +166,7 @@ export default function Products() {
         colors,
         weight: parseInt(weight, 10) || 500,
         images: finalImageArray,
-        image_url: finalImageArray.length > 0 ? finalImageArray[0] : null // Keep backwards compatibility with old UI if needed
+        image_url: finalImageArray.length > 0 ? finalImageArray[0] : null
       };
 
       let error;
@@ -181,10 +179,8 @@ export default function Products() {
       }
 
       if (error) throw error;
-
       closeModal();
       fetchProducts();
-
     } catch (error) {
       alert('Error saving product: ' + error.message);
     } finally {
@@ -193,12 +189,12 @@ export default function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm('Hapus produk ini secara permanen?')) {
       const { error } = await deleteProduct(id);
       if (!error) {
         fetchProducts();
       } else {
-        alert('Failed to delete product.');
+        alert('Gagal menghapus produk.');
       }
     }
   };
@@ -206,18 +202,6 @@ export default function Products() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditId(null);
-    setName('');
-    setDescription('');
-    setPrice('');
-    setStock('0');
-    setIsPreorder(false);
-    setWeight('500');
-    setMaterial('');
-    setVideoUrl('');
-    setColors([]);
-    setNewColor('');
-    setMediaItems([]);
-    setVideoFile(null);
   };
 
   const addColor = () => {
@@ -231,81 +215,127 @@ export default function Products() {
     setColors(colors.filter(c => c !== colorToRemove));
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(price);
+  const formatPrice = (p) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
   };
 
+  const filteredProducts = products.filter(p => 
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-10">
+      {/* Header & Search */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Products</h2>
-          <p className="mt-1 text-sm text-gray-500">Manage your product catalog, pricing, and inventory.</p>
+          <h2 className="text-3xl font-bold font-heading text-gray-900">Katalog Produk</h2>
+          <p className="mt-1 text-gray-500">Total {products.length} produk tersedia di etalase Anda.</p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors"
-        >
-          <Plus className="-ml-1 mr-2 w-5 h-5" aria-hidden="true" />
-          Add Product
-        </button>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Cari nama produk..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-100 bg-white shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm transition-all"
+            />
+          </div>
+          <button
+            onClick={() => handleOpenModal()}
+            className="w-full sm:w-auto gradient-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Produk
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[2rem] shadow-premium border border-gray-50 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-50">
+                <th className="px-8 py-5 font-bold">Informasi Produk</th>
+                <th className="px-8 py-5 font-bold">Harga</th>
+                <th className="px-8 py-5 font-bold">Stok</th>
+                <th className="px-8 py-5 font-bold">Berat</th>
+                <th className="px-8 py-5 font-bold">Status</th>
+                <th className="px-8 py-5 font-bold text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                    Loading products...
+                  <td colSpan="6" className="px-8 py-20 text-center">
+                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+                    <span className="text-sm text-gray-400 font-medium">Memuat katalog...</span>
                   </td>
                 </tr>
-              ) : products.length === 0 ? (
+              ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No products found. Add your first product!
+                  <td colSpan="6" className="px-8 py-20 text-center text-gray-400 font-medium italic">
+                    Belum ada produk atau hasil pencarian nihil.
                   </td>
                 </tr>
               ) : (
-                products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-md overflow-hidden">
+                filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 duration-300">
                           {product.image_url ? (
-                            <img className="h-10 w-10 object-cover" src={product.image_url} alt="" />
+                            <img className="w-full h-full object-cover" src={product.image_url} alt={product.name} />
                           ) : (
-                            <div className="h-10 w-10 flex items-center justify-center text-gray-400">No Img</div>
+                            <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300">
+                              <Package className="w-6 h-6" />
+                            </div>
                           )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{product.name}</p>
+                          <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-tight">{product.material || 'Material Belum Diatur'}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatPrice(product.price)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.weight || 500}g</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${!product.is_preorder ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                        {!product.is_preorder ? 'Ready Stock' : 'Pre-Order'}
+                    <td className="px-8 py-5">
+                      <p className="text-sm font-black text-gray-900">{formatPrice(product.price)}</p>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${product.stock < 5 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+                        <span className="text-sm font-bold text-gray-700">{product.stock}</span>
+                        <span className="text-[10px] text-gray-400 font-medium uppercase">pcs</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-sm font-medium text-gray-500">
+                      {product.weight || 500} <span className="text-[10px] uppercase opacity-60">gr</span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className={`px-3 py-1 inline-flex text-[10px] font-bold rounded-lg border
+                        ${!product.is_preorder ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                        {!product.is_preorder ? 'READY STOCK' : 'PRE-ORDER'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                      <button onClick={() => handleOpenModal(product)} className="text-blue-600 hover:text-blue-800 transition-colors"><Edit2 className="w-4 h-4 inline-block" /></button>
-                      <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 transition-colors"><Trash2 className="w-4 h-4 inline-block" /></button>
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => handleOpenModal(product)} 
+                          className="p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="Edit Produk"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(product.id)} 
+                          className="p-2.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="Hapus Produk"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -315,173 +345,234 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Add Product Modal */}
+      {/* Modern Add Product Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={closeModal}></div>
+        <div className="fixed inset-0 z-[100] overflow-y-auto overflow-x-hidden flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-300" onClick={closeModal}></div>
 
-            <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="text-lg font-medium leading-6 text-gray-900">{editId ? 'Edit Product' : 'Add New Product'}</h3>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500">
+          <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-300 min-h-[600px] max-h-[90vh]">
+            {/* Sidebar Modal - Visual Preview */}
+            <div className="hidden md:flex md:w-1/3 gradient-primary p-10 flex-col justify-between text-white relative flex-shrink-0">
+              <div className="absolute top-0 right-0 p-10 opacity-10">
+                <Package className="w-32 h-32" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="text-3xl font-black font-heading leading-tight italic">
+                  {editId ? 'UPDATE ITEM' : 'READY TO SELL?'}
+                </h3>
+                <p className="mt-4 text-emerald-50/80 text-sm font-medium leading-relaxed">
+                  Lengkapi detail produk Anda agar customer semakin yakin untuk berbelanja di Nayea.id. 🌿
+                </p>
+              </div>
+              
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl border border-white/10">
+                  <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">1</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Info Dasar</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-transparent">
+                  <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold">2</span>
+                  <span className="text-xs font-bold uppercase tracking-wider opacity-60 text-emerald-100">Media Gallery</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Form Content */}
+            <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-white">
+              <div className="flex justify-between items-center mb-10">
+                <h4 className="text-2xl font-black font-heading text-gray-900 tracking-tight">Detail Produk</h4>
+                <button onClick={closeModal} className="p-2 rounded-full bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Multi-Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Product Images (Gallery)</label>
-                  <p className="text-xs text-gray-500 mb-2">Urutan dapat diatur. Gambar pertama akan menjadi cover.</p>
-                  <div className="mt-1 flex flex-col items-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md relative">
-                    <div className="flex flex-wrap justify-center gap-4 mb-4">
-                      {mediaItems.length > 0 ? (
-                        mediaItems.map((item, idx) => (
-                          <div key={idx} className="relative w-28 h-28 border rounded-md bg-white group shadow-sm transition-all hover:shadow-md">
-                            <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded z-10 font-bold">
-                              {idx + 1}
-                            </span>
-                            <img src={item.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded-md" />
-
-                            {/* Overlay Controls */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1 rounded-md">
-                              <div className="flex justify-between">
-                                <button
-                                  type="button"
-                                  onClick={() => moveImage(idx, 'left')}
-                                  disabled={idx === 0}
-                                  className={`p-1 bg-white/90 rounded text-gray-800 transition-colors ${idx === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:text-blue-600'}`}
-                                >
-                                  <ArrowLeft className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveImage(idx, 'right')}
-                                  disabled={idx === mediaItems.length - 1}
-                                  className={`p-1 bg-white/90 rounded text-gray-800 transition-colors ${idx === mediaItems.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:text-blue-600'}`}
-                                >
-                                  <ArrowRight className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => removeImage(idx)}
-                                className="self-center p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-sm text-gray-500">No images uploaded yet.</div>
-                      )}
-                    </div>
-                    <div className="flex text-sm text-gray-600 justify-center">
-                      <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                        <span className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors">
-                          <Upload className="w-4 h-4" /> Tambah Gambar
-                        </span>
-                        <input id="file-upload" name="file-upload" type="file" multiple className="sr-only" accept="image/*" onChange={handleImageChange} />
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-3">PNG, JPG, WEBP up to 5MB.</p>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Visual Image/Video Area */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                       <Layers className="w-4 h-4 text-primary" /> Media & Galeri
+                    </label>
+                    <label htmlFor="file-upload" className="text-xs font-bold text-primary hover:underline cursor-pointer">
+                      + Tambah Foto
+                      <input id="file-upload" type="file" multiple className="sr-only" accept="image/*" onChange={handleImageChange} />
+                    </label>
                   </div>
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Product Name</label>
-                  <input type="text" id="name" required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea id="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
-                </div>
-
-                {/* Video Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Real-Pict Video (Optional)</label>
-                  <div className="mt-1 flex items-center gap-4">
-                    {videoUrl ? (
-                      <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 border rounded-md w-full justify-between">
-                        <div className="flex items-center gap-2 text-sm text-gray-700 truncate">
-                          <Video className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                          <span className="truncate">{videoFile ? videoFile.name : 'Existing Video Uploaded'}</span>
-                        </div>
-                        <button type="button" onClick={removeVideo} className="text-red-500 hover:text-red-700 p-1">
-                          <XCircle className="w-5 h-5" />
-                        </button>
-                      </div>
+                  
+                  <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
+                    {mediaItems.length === 0 ? (
+                      <label htmlFor="file-upload" className="w-32 h-32 rounded-[2rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center bg-gray-50 text-gray-300 flex-shrink-0 cursor-pointer hover:bg-white hover:border-primary/50 hover:text-primary transition-all group">
+                         <Plus className="w-8 h-8 mb-1 group-hover:scale-110 transition-transform" />
+                         <span className="text-[10px] font-black uppercase">Foto</span>
+                      </label>
                     ) : (
-                      <div className="w-full flex items-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-md relative bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <label htmlFor="video-upload" className="relative cursor-pointer w-full text-center flex flex-col items-center">
-                          <Video className="w-8 h-8 text-gray-400 mb-2" />
-                          <span className="text-sm font-medium text-blue-600 hover:text-blue-500">Pilih File Video MP4/WEBM</span>
-                          <p className="text-xs text-gray-500 mt-1">Maksimal 50MB.</p>
-                          <input id="video-upload" name="video-upload" type="file" className="sr-only" accept="video/mp4,video/webm" onChange={handleVideoChange} />
-                        </label>
-                      </div>
+                      mediaItems.map((item, idx) => (
+                        <div key={idx} className="relative w-32 h-32 rounded-[2rem] overflow-hidden border border-gray-100 flex-shrink-0 shadow-sm group">
+                          <img src={item.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                             <button type="button" onClick={() => removeImage(idx)} className="p-2 rounded-full bg-white text-rose-500 shadow-lg">
+                               <X className="w-4 h-4" />
+                             </button>
+                             {idx > 0 && (
+                               <button type="button" onClick={() => moveImage(idx, 'left')} className="p-2 rounded-full bg-white text-primary shadow-lg">
+                                 <ArrowLeft className="w-4 h-4" />
+                               </button>
+                             )}
+                          </div>
+                          {idx === 0 && <span className="absolute bottom-2 left-2 right-2 bg-primary/90 text-white text-[8px] font-black uppercase text-center py-1 rounded-full shadow-lg">Cover Utama</span>}
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
 
-                {/* Material */}
-                <div>
-                  <label htmlFor="material" className="block text-sm font-medium text-gray-700">Material / Fabric (Optional)</label>
-                  <input type="text" id="material" placeholder="e.g., Premium Ceruty Babydoll" value={material} onChange={(e) => setMaterial(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
-                </div>
-
-                {/* Colors Manager */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Color Variants</label>
-                  <div className="flex gap-2">
-                    <input type="text" value={newColor} onChange={(e) => setNewColor(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }} placeholder="e.g., Hitam, Maroon" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
-                    <button type="button" onClick={addColor} className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none">Add</button>
+                {/* Primary Data Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400">Nama Produk</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={name} 
+                      onChange={(e) => setName(e.target.value)} 
+                      placeholder="e.g. Bergo Maryam Pashmina"
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all shadow-sm"
+                    />
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {colors.map((color, idx) => (
-                      <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {color}
-                        <button type="button" onClick={() => removeColor(color)} className="ml-1.5 inline-flex items-center justify-center text-blue-400 hover:text-blue-500 focus:outline-none"><XCircle className="w-4 h-4" /></button>
-                      </span>
-                    ))}
-                    {colors.length === 0 && <span className="text-xs text-gray-500 italic">No color variants added.</span>}
-                  </div>
-                </div>
-
-                {/* Price, Stock & Weight Row */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price (Rp)</label>
-                    <input type="number" id="price" required min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
-                  </div>
-                  <div>
-                    <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Stock</label>
-                    <input type="number" id="stock" required min="0" value={stock} onChange={(e) => setStock(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
-                  </div>
-                  <div>
-                    <label htmlFor="weight" className="block text-sm font-medium text-gray-700">Weight (g)</label>
-                    <input type="number" id="weight" required min="1" value={weight} onChange={(e) => setWeight(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" />
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400">Material / Kain</label>
+                    <input 
+                      type="text" 
+                      value={material} 
+                      onChange={(e) => setMaterial(e.target.value)} 
+                      placeholder="e.g. Silk, Crinkle, Ceruty"
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all shadow-sm"
+                    />
                   </div>
                 </div>
 
-                {/* Preorder Checkbox */}
-                <div className="flex items-center mt-4">
-                  <input id="preorder" type="checkbox" checked={isPreorder} onChange={(e) => setIsPreorder(e.target.checked)} className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded" />
-                  <label htmlFor="preorder" className="ml-2 block text-sm text-gray-900">This is a Pre-order item</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-gray-400">Deskripsi LENGKAP</label>
+                  <textarea 
+                    rows={4} 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)} 
+                    placeholder="Jelaskan keunggulan hijab ini kepada customer..."
+                    className="w-full px-6 py-4 rounded-3xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all resize-none shadow-sm"
+                  />
                 </div>
 
-                {/* Submit */}
-                <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                  <button type="submit" disabled={isSubmitting} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm disabled:opacity-50">
-                    {isSubmitting ? 'Saving...' : editId ? 'Update Product' : 'Save Product'}
+                {/* Pricing & Stock Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400">Harga (Rp)</label>
+                    <div className="relative">
+                       <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">Rp</span>
+                       <input 
+                        type="number" 
+                        required 
+                        value={price} 
+                        onChange={(e) => setPrice(e.target.value)} 
+                        className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm font-bold transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400">Total Stok</label>
+                    <input 
+                      type="number" 
+                      required 
+                      value={stock} 
+                      onChange={(e) => setStock(e.target.value)} 
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm font-bold transition-all shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-right flex flex-col items-end">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400">Tipe Jualan</label>
+                    <div className="mt-2 flex items-center gap-3">
+                      <span className={`text-[10px] font-black uppercase tracking-tighter ${!isPreorder ? 'text-emerald-500' : 'text-gray-300'}`}>Ready</span>
+                      <button 
+                        type="button"
+                        onClick={() => setIsPreorder(!isPreorder)}
+                        className={`w-12 h-6 rounded-full p-1 relative transition-colors ${isPreorder ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                      >
+                         <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform ${isPreorder ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                      <span className={`text-[10px] font-black uppercase tracking-tighter ${isPreorder ? 'text-amber-500' : 'text-gray-300'}`}>PO</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Extra Details (Weight, Colors) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                  <div className="space-y-4">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                      <AlertCircle className="w-3.5 h-3.5" /> Berat & Varian Warna
+                    </label>
+                    <div className="flex items-center gap-4">
+                       <input 
+                        type="number" 
+                        value={weight} 
+                        onChange={(e) => setWeight(e.target.value)} 
+                        placeholder="Berat (gr)"
+                        className="w-24 px-4 py-3 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-xs transition-all shadow-sm"
+                       />
+                       <div className="flex-1 flex gap-2">
+                          <input 
+                            type="text" 
+                            value={newColor} 
+                            onChange={(e) => setNewColor(e.target.value)} 
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
+                            placeholder="Warna baru..."
+                            className="flex-1 px-4 py-3 rounded-xl bg-gray-50 border-transparent outline-none text-xs shadow-sm"
+                          />
+                          <button type="button" onClick={addColor} className="p-3 rounded-xl bg-gray-900 text-white"><ArrowRight className="w-4 h-4" /></button>
+                       </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((color, idx) => (
+                        <span key={idx} className="inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                          {color}
+                          <button type="button" onClick={() => removeColor(color)} className="ml-2"><X className="w-3 h-3" /></button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                     <label className="text-xs font-black uppercase tracking-widest text-gray-400">Video Produk (MP4/WEBM)</label>
+                     {videoUrl ? (
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 italic">
+                           <div className="flex items-center gap-2 text-emerald-700 text-xs">
+                              <Video className="w-4 h-4" /> <span>Video Terpilih</span>
+                           </div>
+                           <button type="button" onClick={removeVideo} className="text-emerald-300 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                     ) : (
+                       <label htmlFor="video-upload" className="w-full flex items-center justify-center p-8 rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50 hover:bg-white hover:border-primary/50 text-gray-400 transition-all cursor-pointer group shadow-sm">
+                          <Video className="w-8 h-8 mr-2 group-hover:scale-110 transition-transform" />
+                          <span className="text-xs font-bold uppercase tracking-tight">Upload Video</span>
+                          <input id="video-upload" type="file" className="sr-only" accept="video/mp4,video/webm" onChange={handleVideoChange} />
+                       </label>
+                     )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-8 flex flex-col-reverse sm:flex-row gap-4">
+                  <button 
+                    type="button" 
+                    onClick={closeModal} 
+                    className="flex-1 py-4 rounded-2xl bg-gray-50 text-gray-500 text-sm font-bold hover:bg-gray-100 transition-all active:scale-95"
+                  >
+                    Batal
                   </button>
-                  <button type="button" onClick={closeModal} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
-                    Cancel
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="flex-[2] py-4 rounded-2xl gradient-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/30 hover:shadow-2xl hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'MENYIMPAN...' : editId ? 'PERBARUI PRODUK' : 'SIMPAN PRODUK'}
                   </button>
                 </div>
               </form>

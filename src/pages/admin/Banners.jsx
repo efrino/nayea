@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Upload, Video, Image } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Upload, Video, Image, ExternalLink, Eye, EyeOff, Layers } from 'lucide-react';
 import { getBanners, createBanner, updateBanner, deleteBanner, uploadFile } from '../../services/api';
 
-// Helper to detect if a URL points to a video file
 const isVideoUrl = (url) => {
   if (!url) return false;
   const lower = url.split('?')[0].toLowerCase();
@@ -26,13 +25,9 @@ export default function Banners() {
   const getSmartHref = (urlStr) => {
     if (!urlStr) return '#';
     let url = urlStr.trim();
-    if (url.match(/^https?:\/\//)) {
-      return url;
-    } else if (url.match(/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/)) {
-      return `https://${url}`;
-    } else if (!url.startsWith('/')) {
-      return `/${url}`;
-    }
+    if (url.match(/^https?:\/\//)) return url;
+    if (url.match(/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/)) return `https://${url}`;
+    if (!url.startsWith('/')) return `/${url}`;
     return url;
   };
 
@@ -71,24 +66,17 @@ export default function Banners() {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Different size limits for video vs image
     const isVideo = file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.gif');
     const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
       alert(`Ukuran file terlalu besar. Maksimal ${isVideo ? '50MB untuk video' : '5MB untuk gambar'}.`);
       return;
     }
-
     setUploading(true);
     const { url, error } = await uploadFile(file, 'banners');
     setUploading(false);
-
-    if (error) {
-      alert("Gagal mengupload media: " + error.message);
-    } else if (url) {
-      setFormData({ ...formData, image_url: url });
-    }
+    if (error) alert("Gagal mengupload media: " + error.message);
+    else if (url) setFormData({ ...formData, image_url: url });
   };
 
   const handleSubmit = async (e) => {
@@ -97,7 +85,6 @@ export default function Banners() {
       alert("Harap upload gambar banner");
       return;
     }
-
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -105,7 +92,6 @@ export default function Banners() {
       image_url: formData.image_url,
       active: formData.active
     };
-
     if (formData.id) {
       const { error } = await updateBanner(formData.id, payload);
       if (error) alert("Gagal memperbarui banner: " + error.message);
@@ -113,7 +99,6 @@ export default function Banners() {
       const { error } = await createBanner(payload);
       if (error) alert("Gagal menambah banner: " + error.message);
     }
-
     handleCloseModal();
     fetchBanners();
   };
@@ -133,231 +118,129 @@ export default function Banners() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Banners</h2>
-          <p className="mt-1 text-sm text-gray-500">Kelola banner promo yang tayang di halaman depan.</p>
+          <h2 className="text-3xl font-bold font-heading text-gray-900 leading-tight italic uppercase tracking-tighter">PROMO BANNERS</h2>
+          <p className="mt-1 text-gray-500">Kelola visual promosi dan penawaran spesial di homepage.</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none transition-colors"
+          className="gradient-primary text-white px-8 py-3.5 rounded-2xl text-sm font-black shadow-xl shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest"
         >
-          <Plus className="-ml-1 mr-2 w-5 h-5" aria-hidden="true" />
+          <Plus className="w-5 h-5" />
           Tambah Banner
         </button>
       </div>
 
-      <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Informasi Banner</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="relative px-6 py-3"><span className="sr-only">Aksi</span></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">Memuat banner...</td>
-                </tr>
-              ) : banners.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">Belum ada banner yang ditambahkan.</td>
-                </tr>
-              ) : (
-                banners.map((banner) => (
-                  <tr key={banner.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center space-x-4">
-                        {isVideoUrl(banner.image_url) ? (
-                          <video
-                            src={banner.image_url}
-                            className="h-16 w-32 object-cover rounded-md bg-gray-100 shadow-sm border border-gray-200"
-                            autoPlay loop muted playsInline
-                          />
-                        ) : (
-                          <img src={banner.image_url} alt="Banner Preview" className="h-16 w-32 object-cover rounded-md bg-gray-100 shadow-sm border border-gray-200" />
-                        )}
-                        <div>
-                          <p className="font-semibold text-gray-900">{banner.title}</p>
-                          <p className="text-gray-500 text-xs truncate w-48">{banner.description || 'Tidak ada deskripsi'}</p>
-                          {banner.link_url && <a href={getSmartHref(banner.link_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs mt-1 block">Buka Tautan</a>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleToggleActive(banner)}
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full transition-colors
-                        ${banner.active ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-                      >
-                        {banner.active ? 'Aktif' : 'Non-Aktif'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                      <button onClick={() => handleOpenModal(banner)} className="text-blue-500 hover:text-blue-700 transition-colors">
-                        <Edit2 className="w-5 h-5 inline-block" />
-                      </button>
-                      <button onClick={() => handleDelete(banner.id)} className="text-red-500 hover:text-red-700 transition-colors">
-                        <Trash2 className="w-5 h-5 inline-block" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {loading ? (
+          <div className="col-span-full py-20 text-center">
+            <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-gray-400 font-bold uppercase tracking-widest">Memuat Media...</p>
+          </div>
+        ) : banners.length === 0 ? (
+          <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] shadow-premium border-2 border-dashed border-gray-100">
+            <Layers className="w-16 h-16 mx-auto mb-4 text-gray-100" />
+            <p className="text-gray-400 font-bold uppercase tracking-widest italic">Belum ada banner promosi.</p>
+          </div>
+        ) : (
+          banners.map((banner) => (
+            <div key={banner.id} className="bg-white rounded-[2.5rem] shadow-premium border border-gray-50 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+              <div className="aspect-[21/9] relative overflow-hidden bg-gray-50">
+                {isVideoUrl(banner.image_url) ? (
+                  <video src={banner.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" autoPlay loop muted playsInline />
+                ) : (
+                  <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                   <button onClick={() => handleOpenModal(banner)} className="p-3 bg-white rounded-2xl text-blue-600 shadow-xl hover:scale-110 transition-transform active:scale-90"><Edit2 className="w-5 h-5" /></button>
+                   <button onClick={() => handleDelete(banner.id)} className="p-3 bg-white rounded-2xl text-rose-500 shadow-xl hover:scale-110 transition-transform active:scale-90"><Trash2 className="w-5 h-5" /></button>
+                </div>
+                {!banner.active && (
+                   <div className="absolute top-4 left-4 px-4 py-2 bg-gray-900/80 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center gap-2">
+                      <EyeOff className="w-3.5 h-3.5" /> Hidden
+                   </div>
+                )}
+              </div>
+              
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-4">
+                   <h3 className="text-lg font-black font-heading text-gray-900 leading-tight group-hover:text-primary transition-colors">{banner.title}</h3>
+                   <button 
+                    onClick={() => handleToggleActive(banner)}
+                    className={`p-2 rounded-xl border transition-all ${banner.active ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
+                   >
+                      {banner.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                   </button>
+                </div>
+                <p className="text-sm text-gray-400 font-medium mb-6 line-clamp-2 leading-relaxed">{banner.description || 'Tidak ada deskripsi'}</p>
+                <div className="flex items-center justify-between">
+                   {banner.link_url ? (
+                     <a href={getSmartHref(banner.link_url)} target="_blank" className="text-[10px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-1.5 hover:underline decoration-2 underline-offset-4">
+                        Tinjau Tautan <ExternalLink className="w-3 h-3" />
+                     </a>
+                   ) : <div />}
+                   <span className="text-[8px] font-bold text-gray-200 uppercase tracking-widest italic group-hover:text-gray-300 transition-colors">#{banner.id.toString().slice(-4)}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* Modal Form */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0 overflow-hidden bg-black bg-opacity-60 backdrop-blur-sm transition-opacity">
-          <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] sm:my-8">
-
-            {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-white rounded-t-xl">
-              <h3 className="text-lg font-bold text-gray-900" id="modal-title">
-                {formData.id ? 'Edit Banner' : 'Tambah Banner Baru'}
-              </h3>
-              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                <X className="w-6 h-6" />
-              </button>
+        <div className="fixed inset-0 z-[100] overflow-y-auto flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseModal}></div>
+          <div className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="px-10 py-8 border-b border-gray-50 bg-white flex items-center justify-between">
+               <h3 className="text-2xl font-black font-heading text-gray-900 tracking-tight">{formData.id ? 'UPDATE BANNER' : 'NEW BANNER'}</h3>
+               <button onClick={handleCloseModal} className="p-2 rounded-full bg-gray-50 text-gray-400 hover:text-gray-900 transition-all"><X className="w-6 h-6" /></button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-              {/* Modal Body (Scrollable) */}
-              <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300">
-
-                {/* Upload Image Field */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Upload Media Banner <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1 p-5 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-center cursor-pointer relative">
-                    {formData.image_url ? (
-                      <div className="mb-4">
+            <form onSubmit={handleSubmit} className="p-10 space-y-8">
+               <div className="relative aspect-[21/9] rounded-[2rem] bg-gray-50 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden group cursor-pointer hover:border-primary/50 transition-all">
+                  {formData.image_url ? (
+                     <>
                         {isVideoUrl(formData.image_url) ? (
-                          <div className="flex flex-col items-center">
-                            <video
-                              src={formData.image_url}
-                              className="mx-auto h-36 w-auto rounded-md shadow border border-gray-200"
-                              autoPlay loop muted playsInline
-                            />
-                            <p className="text-xs text-green-600 mt-3 font-semibold flex items-center gap-1">
-                              <Video className="w-3.5 h-3.5" /> Video tersimpan (loop)
-                            </p>
-                          </div>
+                           <video src={formData.image_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
                         ) : (
-                          <div className="flex flex-col items-center">
-                            <img src={formData.image_url} alt="Preview" className="mx-auto h-36 w-auto object-cover rounded-md shadow border border-gray-200" />
-                            <p className="text-xs text-green-600 mt-3 font-semibold flex items-center gap-1">
-                              <Image className="w-3.5 h-3.5" /> Gambar tersimpan
-                            </p>
-                          </div>
+                           <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
                         )}
-                      </div>
-                    ) : (
-                      <div className="mb-4">
-                        <Upload className="mx-auto h-10 w-10 text-gray-400 mb-3" />
-                        <p className="text-sm text-gray-600 font-medium">Buka folder &amp; pilih file</p>
-                        <p className="text-xs text-gray-400 mt-1">Gambar: JPG/PNG/WEBP (max 5MB) · Video: MP4/WEBM/GIF (max 50MB)</p>
-                        <p className="text-xs text-blue-600 font-medium mt-2 bg-blue-50 py-1.5 px-3 rounded-md inline-block border border-blue-100">
-                          Rekomendasi Desktop: 1920x800px (Rasio 21:9)
-                        </p>
-                      </div>
-                    )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <p className="text-white text-xs font-black uppercase tracking-widest">Ganti Media</p>
+                        </div>
+                     </>
+                  ) : (
+                     <div className="text-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                        <p className="text-xs font-black uppercase tracking-widest text-gray-400">Pilih JPG / Video MP4</p>
+                     </div>
+                  )}
+                  <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} disabled={uploading} />
+                  {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><p className="text-primary font-black animate-pulse">UPLOADING...</p></div>}
+               </div>
 
-                    <input
-                      type="file"
-                      id="file-upload"
-                      accept="image/jpeg, image/png, image/webp, image/gif, video/mp4, video/webm"
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      onChange={handleImageUpload}
-                      disabled={uploading}
-                    />
-
-                    {uploading && (
-                      <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center rounded-lg">
-                        <p className="text-sm text-primary font-bold animate-pulse">Mengupload media...</p>
-                      </div>
-                    )}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Judul Promo <span className="text-rose-500 font-bold">*</span></label>
+                     <input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Ramadhan Sale" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
                   </div>
-                </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tautan / Link</label>
+                     <input type="text" value={formData.link_url} onChange={(e) => setFormData({ ...formData, link_url: e.target.value })} placeholder="/catalog" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
+                  </div>
+               </div>
 
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Judul Banner <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title || ''}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm transition-shadow"
-                    placeholder="Contoh: Promo Ramadhan 50%"
-                  />
-                </div>
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Slogan / Deskripsi</label>
+                  <textarea rows={2} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Jelaskan promo ini dalam satu kalimat manis..." className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all resize-none" />
+               </div>
 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Deskripsi Singkat (Opsional)</label>
-                  <textarea
-                    rows={2}
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm transition-shadow"
-                    placeholder="Gunakan kode promo KAMIBERKAH saat checkout"
-                  />
-                </div>
-
-                {/* Link URL */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Tautan / Link URL (Opsional)</label>
-                  <input
-                    type="text"
-                    value={formData.link_url || ''}
-                    onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
-                    className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm transition-shadow"
-                    placeholder="https://nayea.id/catalog (link produk atau whatsapp)"
-                  />
-                </div>
-
-                {/* Active Checkbox */}
-                <div className="flex items-center bg-gray-50 p-3 rounded-lg border border-gray-100 mt-2">
-                  <input
-                    id="active"
-                    name="active"
-                    type="checkbox"
-                    checked={formData.active || false}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="active" className="ml-3 block text-sm font-medium text-gray-900 cursor-pointer">
-                    Tayangkan Banner ini (Aktif)
-                  </label>
-                </div>
-              </div>
-
-              {/* Action Buttons (Fixed Footer) */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-xl flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 shadow-sm px-5 py-2.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading || !formData.image_url}
-                  className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-5 py-2.5 bg-primary text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  Simpan Banner
-                </button>
-              </div>
+               <div className="flex items-center gap-3">
+                  <button type="button" onClick={handleCloseModal} className="flex-1 py-4 bg-gray-50 text-gray-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-gray-100 transition-all">Tutup</button>
+                  <button type="submit" disabled={uploading || !formData.image_url} className="flex-[2] py-4 gradient-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 hover:shadow-2xl active:scale-95 transition-all">Simpan Perubahan</button>
+               </div>
             </form>
           </div>
         </div>
