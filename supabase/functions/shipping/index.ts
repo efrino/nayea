@@ -11,10 +11,38 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
+// Simple in-memory rate limiting (Note: Function instances may reset)
+// In production, consider using a database or a specialized service.
+const rateLimitMap = new Map<string, { count: number, resetAt: number }>();
+const LIMIT = 30; // 30 requests
+const WINDOW = 60 * 1000; // per minute
+
 serve(async (req) => {
   // ── Preflight – MUST return 200 with a text body ──
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
+  }
+
+  // Simple IP-based Rate Limiting
+  // Note: Deno.serve provides the remote address in some environments, 
+  // but for Supabase Edge Functions we often look at x-real-ip or x-forwarded-for
+  const clientIp = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "unknown";
+  const now = Date.now();
+  const rateInfo = rateLimitMap.get(clientIp) || { count: 0, resetAt: now + WINDOW };
+
+  if (now > rateInfo.resetAt) {
+    rateInfo.count = 1;
+    rateInfo.resetAt = now + WINDOW;
+  } else {
+    rateInfo.count++;
+  }
+  rateLimitMap.set(clientIp, rateInfo);
+
+  if (rateInfo.count > LIMIT) {
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please slow down." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   const url = new URL(req.url);

@@ -202,9 +202,18 @@ export default function ChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatLog]);
 
+  const lastSendTime = useRef(0);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!message.trim() || !user) return;
+
+    // Cooldown check (2 seconds between messages)
+    const now = Date.now();
+    if (now - lastSendTime.current < 2000) {
+      return; // Ignore spam
+    }
+    lastSendTime.current = now;
 
     const newMsg = {
       user_id: user.id,

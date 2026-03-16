@@ -10,10 +10,19 @@ export default function StoreRegister() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMsg, setSuccessMsg] = useState('');
+    const [honey, setHoney] = useState(''); // Honeypot field
     const navigate = useNavigate();
 
     const handleRegister = async (e) => {
         e.preventDefault();
+        
+        // Bot check: if honey is filled, silently ignore or show generic error
+        if (honey) {
+            console.warn('Bot detected');
+            setSuccessMsg('Pendaftaran berhasil! Silakan periksa kotak masuk email Anda.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setSuccessMsg('');
@@ -130,6 +139,18 @@ export default function StoreRegister() {
                                     className="block w-full px-6 py-4 bg-gray-50 border-2 border-gray-50 rounded-[1.5rem] text-sm font-black italic text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                                 />
                             </div>
+                        </div>
+
+                        {/* Honeypot field - hidden from humans */}
+                        <div className="hidden" aria-hidden="true">
+                            <input
+                                type="text"
+                                name="full_name_confirm"
+                                tabIndex="-1"
+                                autoComplete="off"
+                                value={honey}
+                                onChange={(e) => setHoney(e.target.value)}
+                            />
                         </div>
 
                         <div>

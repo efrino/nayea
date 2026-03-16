@@ -1,10 +1,29 @@
 /**
- * Vercel Serverless Function
- * Proxy: POST /api/shipping-cost
- * Body (JSON): { destination, weight }
  * → securely forwards to rajaongkir.komerce.id server-side (no CORS issue)
  */
+
+// Simple in-memory rate limit (best-effort for serverless)
+const rateLimitMap = new Map();
+const LIMIT = 30; 
+const WINDOW = 60 * 1000;
+
 export default async function handler(req, res) {
+  const clientIp = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || 'unknown';
+  const now = Date.now();
+  const rateInfo = rateLimitMap.get(clientIp) || { count: 0, resetAt: now + WINDOW };
+
+  if (now > rateInfo.resetAt) {
+    rateInfo.count = 1;
+    rateInfo.resetAt = now + WINDOW;
+  } else {
+    rateInfo.count++;
+  }
+  rateLimitMap.set(clientIp, rateInfo);
+
+  if (rateInfo.count > LIMIT) {
+    return res.status(429).json({ error: 'Too many requests. Please slow down.' });
+  }
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

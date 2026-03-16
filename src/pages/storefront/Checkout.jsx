@@ -41,6 +41,9 @@ export default function Checkout() {
   // Filter chips state
   const [activeCourier, setActiveCourier] = useState('ALL');
 
+  // Honeypot
+  const [honey, setHoney] = useState('');
+
   /* ─── Close dest dropdown on outside click ─── */
   useEffect(() => {
     const handler = (e) => {
@@ -107,11 +110,21 @@ export default function Checkout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Bot check
+    if (honey) {
+      console.warn('Bot detected in checkout');
+      setIsSuccess(true);
+      return;
+    }
+
     if (!user) { openLoginModal(null, 'checkout'); return; }
     if (!selectedDest) { alert('Harap pilih kecamatan tujuan pengiriman.'); return; }
     if (!selectedService) { alert('Harap pilih layanan kurir.'); return; }
 
     setIsSubmitting(true);
+    // Extra safety: set a flag to prevent re-entry during the async call
+    if (isSubmitting) return;
     try {
       const courierStr  = `${selectedService.courier} ${selectedService.service}`;
       const fullAddress = `${formData.address}, ${selectedDest.label}`;
@@ -403,6 +416,18 @@ export default function Checkout() {
                     <span className="ml-3 text-sm font-medium text-gray-400">QRIS (Segera Hadir)</span>
                   </label>
                 </div>
+              </div>
+
+              {/* Honeypot - Hidden from humans */}
+              <div className="hidden" aria-hidden="true">
+                <input
+                  type="text"
+                  name="user_confirm_field"
+                  tabIndex="-1"
+                  autoComplete="off"
+                  value={honey}
+                  onChange={e => setHoney(e.target.value)}
+                />
               </div>
 
               {/* ── Submit ── */}
