@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { 
-  CreditCard, 
-  Search, 
-  ExternalLink, 
-  CheckCircle, 
-  XSquare, 
-  Clock, 
-  Filter,
+import {
+  CreditCard,
+  Search,
+  CheckCircle,
+  XSquare,
+  Clock,
   CheckCircle2,
   AlertCircle,
   TrendingUp,
-  ArrowRight,
   MessageCircle
 } from 'lucide-react';
 
@@ -246,17 +243,13 @@ export default function Payments() {
                    </button>
                  )}
 
-                 <a 
+                 <a
                     href={`https://wa.me/${order.customer_phone?.replace(/[^\d+]/g, '')}`}
                     target="_blank"
                     className="bg-gray-900 hover:bg-black text-white p-4 rounded-2xl shadow-xl transition-all active:scale-95 group/wa"
                  >
                     <MessageCircle className="w-5 h-5 group-hover/wa:rotate-12 transition-transform" />
                  </a>
-                 
-                 <button className="p-4 rounded-2xl bg-white border border-gray-100 text-gray-400 hover:text-gray-900 transition-all">
-                    <ArrowRight className="w-5 h-5" />
-                 </button>
               </div>
             </div>
           ))

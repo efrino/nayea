@@ -70,7 +70,7 @@ Storage buckets: `products` (public read, admin write), `banners` (public read, 
 ### FR-3 Storefront — Checkout & Pembayaran
 - FR-3.1 Checkout menghitung ongkir via `api/shipping-cost.js` berdasarkan berat total (`weight` per produk × qty) dan tujuan yang dipilih via `api/shipping-destination.js`.
 - FR-3.2 Order boleh dibuat oleh guest (RLS `orders` insert `with check (true)`) — `user_id` opsional (nullable, `on delete set null`).
-- FR-3.3 Pembayaran manual: customer upload bukti transfer (`payment_proof_url`), status awal `pending_verification`, admin yang mengubah ke `paid`.
+- FR-3.3 Pembayaran manual: setelah order dibuat, customer diarahkan mengirim bukti transfer lewat WhatsApp (deep link `wa.me` berisi ringkasan pesanan otomatis) — bukan upload file di dalam aplikasi. Admin memverifikasi manual via WhatsApp lalu mengubah `payment_status` ke `paid` dari [Payments](../src/pages/admin/Payments.jsx). Kolom `payment_proof_url` ada di skema tapi saat ini tidak dipakai oleh alur checkout — kalau suatu saat mau diaktifkan (upload proof in-app), perlu tambahan UI upload di Checkout dan viewer di halaman Payments admin.
 - FR-3.4 Status order dan status pembayaran adalah dua field terpisah (`status` vs `payment_status`) — jangan digabung jadi satu state machine.
 
 ### FR-4 Live Chat

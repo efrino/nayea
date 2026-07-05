@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Search, MessageCircle, MoreHorizontal, Phone, Video, User, Check, CheckCheck, Smile, Paperclip } from 'lucide-react';
+import { Send, Search, MessageCircle, Check, CheckCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getMessages, sendMessage, markMessagesDelivered, markMessagesRead, markAllMessagesDelivered } from '../../services/api';
 
@@ -240,16 +240,8 @@ export default function Chat() {
                   </div>
                   <div>
                      <h3 className="text-lg font-black font-heading text-gray-900 tracking-tight leading-none">{activeCustomer?.customerName}</h3>
-                     <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> ONLINE
-                     </p>
+                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1.5">{activeCustomer?.customerEmail}</p>
                   </div>
-               </div>
-               
-               <div className="flex items-center gap-2">
-                  <button className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"><Phone className="w-5 h-5" /></button>
-                  <button className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"><Video className="w-5 h-5" /></button>
-                  <button className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all ml-2"><MoreHorizontal className="w-5 h-5" /></button>
                </div>
             </div>
 
@@ -288,11 +280,6 @@ export default function Chat() {
             {/* Input Bar */}
             <div className="px-8 py-6 bg-white border-t border-gray-50">
                <form onSubmit={handleSend} className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                     <button type="button" className="p-3 text-gray-400 hover:text-primary transition-colors"><Smile className="w-6 h-6" /></button>
-                     <button type="button" className="p-3 text-gray-400 hover:text-primary transition-colors"><Paperclip className="w-6 h-6" /></button>
-                  </div>
-                  
                   <div className="flex-1 relative flex items-center">
                      <input
                         type="text"

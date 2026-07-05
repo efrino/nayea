@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  ShoppingBag, 
-  MapPin, 
-  Package, 
-  Truck, 
-  CheckCircle, 
-  XSquare, 
-  Search, 
-  Filter, 
+import {
+  ShoppingBag,
+  Package,
+  Search,
   ChevronRight,
   User,
-  ExternalLink,
   Clock
 } from 'lucide-react';
 import { getOrders } from '../../services/api';
@@ -223,14 +217,9 @@ export default function Orders() {
                       </div>
                    </div>
                    
-                   <div className="pt-2 flex items-center justify-between px-2">
-                      <div>
-                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Grand Total</p>
-                         <p className="text-xl font-black text-emerald-600">{formatPrice(order.total_amount)}</p>
-                      </div>
-                      <button className="p-4 rounded-2xl bg-gray-900 text-white shadow-xl hover:bg-black active:scale-90 transition-all">
-                         <ExternalLink className="w-5 h-5" />
-                      </button>
+                   <div className="pt-2 px-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Grand Total</p>
+                      <p className="text-xl font-black text-emerald-600">{formatPrice(order.total_amount)}</p>
                    </div>
                 </div>
               </div>

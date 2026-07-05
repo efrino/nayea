@@ -27,11 +27,13 @@ export default function Dashboard() {
   // Recent 5 orders for the table
   const recentOrders = orders.slice(0, 5);
 
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+
   const stats = [
-    { name: 'Total Revenue', value: `Rp ${totalRevenue.toLocaleString('id-ID')}`, change: '+12%', icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100' },
-    { name: 'Total Orders', value: orders.length.toString(), change: '+5.4%', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { name: 'Unique Customers', value: uniqueCustomers.toString(), change: '+18%', icon: Users, color: 'text-purple-600', bg: 'bg-purple-100' },
-    { name: 'Conversion Rate', value: '3.2%', change: '+1.1%', icon: TrendingUp, color: 'text-yellow-600', bg: 'bg-yellow-100' },
+    { name: 'Total Revenue', value: `Rp ${totalRevenue.toLocaleString('id-ID')}`, icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100' },
+    { name: 'Total Orders', value: orders.length.toString(), icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { name: 'Unique Customers', value: uniqueCustomers.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { name: 'Pesanan Menunggu', value: pendingOrders.toString(), icon: TrendingUp, color: 'text-yellow-600', bg: 'bg-yellow-100' },
   ];
 
   return (
@@ -53,10 +55,6 @@ export default function Dashboard() {
                       <dt className="text-sm font-medium text-gray-500 truncate">{item.name}</dt>
                       <dd className="flex items-baseline">
                         <div className="text-2xl font-semibold text-gray-900">{item.value}</div>
-                        {/* Static changes for demo visuals */}
-                        <div className="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                          {item.change}
-                        </div>
                       </dd>
                     </dl>
                   </div>
