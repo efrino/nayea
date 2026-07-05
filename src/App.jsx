@@ -10,6 +10,10 @@ import Wishlist from './pages/storefront/Wishlist';
 import Checkout from './pages/storefront/Checkout';
 import StoreLogin from './pages/storefront/StoreLogin';
 import StoreRegister from './pages/storefront/StoreRegister';
+import About from './pages/storefront/About';
+import Faq from './pages/storefront/Faq';
+import Shipping from './pages/storefront/Shipping';
+import Contact from './pages/storefront/Contact';
 import LoginModal from './components/auth/LoginModal';
 
 import AuthCallback from './pages/auth/AuthCallback';
@@ -48,6 +52,10 @@ function App() {
               <Route path="checkout" element={<Checkout />} />
               <Route path="login" element={<StoreLogin />} />
               <Route path="register" element={<StoreRegister />} />
+              <Route path="about" element={<About />} />
+              <Route path="faq" element={<Faq />} />
+              <Route path="shipping" element={<Shipping />} />
+              <Route path="contact" element={<Contact />} />
             </Route>
 
             {/* Admin Routes */}

@@ -180,19 +180,19 @@ export default function Checkout() {
   if (isSuccess) {
     return (
       <div className="bg-gray-50 min-h-screen py-24 flex items-center justify-center">
-        <div className="bg-white p-12 rounded-3xl shadow-sm text-center max-w-lg w-full mx-4 border border-gray-100">
+        <div className="bg-white p-12 rounded-[3rem] shadow-sm text-center max-w-lg w-full mx-4 border border-gray-100">
           <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Pemesanan Dicatat!</h2>
-          <p className="text-gray-500 mb-8">Terima kasih! Pesanan Anda telah tersimpan. Silakan klik tombol di bawah untuk konfirmasi via WhatsApp agar segera diproses.</p>
-          
+          <h2 className="text-3xl font-black font-heading text-gray-900 italic uppercase mb-2">Pemesanan Dicatat!</h2>
+          <p className="text-gray-500 font-medium mb-8">Terima kasih! Pesanan Anda telah tersimpan. Silakan klik tombol di bawah untuk konfirmasi via WhatsApp agar segera diproses.</p>
+
           <div className="space-y-4">
             <button
               onClick={handleWhatsAppRedir}
-              className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white py-4 rounded-full font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+              className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white py-5 rounded-[1.5rem] font-black text-[12px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95"
             >
               Konfirmasi via WhatsApp
             </button>
-            <Link to="/" className="block text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors">
+            <Link to="/" className="block text-gray-400 hover:text-primary text-[10px] font-black uppercase tracking-widest transition-colors">
               Kembali ke Beranda
             </Link>
           </div>
@@ -203,58 +203,62 @@ export default function Checkout() {
 
   /* ─── Main Checkout Form ─── */
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
+    <div className="bg-gray-50 min-h-screen py-12 sm:py-20">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Breadcrumb */}
         <nav className="flex mb-8">
-          <Link to="/cart" className="flex items-center text-sm font-medium text-gray-500 hover:text-primary">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Keranjang
+          <Link to="/cart" className="group flex items-center text-[10px] font-black text-gray-400 hover:text-primary transition-all uppercase tracking-widest italic">
+            <div className="p-2 bg-gray-50 rounded-full mr-3 group-hover:bg-primary/10 transition-all">
+              <ArrowLeft className="w-4 h-4" />
+            </div>
+            Kembali ke Keranjang
           </Link>
         </nav>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Final Step</span>
+        <h1 className="text-4xl sm:text-5xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-10">Checkout</h1>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-10">
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 sm:p-10">
           <form onSubmit={handleSubmit}>
             <div className="space-y-10">
 
               {/* ── 1. Contact Info ── */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-5">Informasi Kontak</h2>
+                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5">Informasi Kontak</h2>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <label htmlFor="name" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nama Lengkap</label>
                     <input type="text" id="name" name="name" required value={formData.name} onChange={handleInputChange}
-                      className="w-full rounded-xl border border-gray-300 py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                      className="w-full rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                   <div className="sm:col-span-2">
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp</label>
+                    <label htmlFor="phone" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nomor WhatsApp</label>
                     <input type="tel" id="phone" name="phone" required value={formData.phone} onChange={handleInputChange}
-                      className="w-full rounded-xl border border-gray-300 py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                      className="w-full rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                 </div>
               </div>
 
               {/* ── 2. Shipping Address ── */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" /> Alamat Pengiriman
+                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" /> Alamat Pengiriman
                 </h2>
 
                 {/* Destination Search */}
                 <div className="mb-4 relative" ref={searchRef}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
                     Cari Kecamatan / Kota Tujuan
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     <input
                       type="text"
                       placeholder="Cth: Pasar Kemis, Cikupa, Kebayoran Baru..."
                       value={destSearch}
                       onChange={e => { setDestSearch(e.target.value); setSelectedDest(null); setShippingRates([]); setSelectedService(null); }}
                       onFocus={() => destResults.length > 0 && setShowResults(true)}
-                      className="w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full pl-11 pr-10 py-3 border border-gray-200 rounded-[1.2rem] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                     {isSearching && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -265,15 +269,15 @@ export default function Checkout() {
 
                   {/* Dropdown */}
                   {showResults && destResults.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-40 max-h-60 overflow-y-auto">
+                    <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-[1.5rem] shadow-xl z-40 max-h-60 overflow-y-auto p-2">
                       {destResults.map((dest, i) => (
                         <button
                           key={dest.id ?? i}
                           type="button"
                           onMouseDown={() => handleSelectDest(dest)}
-                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 border-b last:border-0 border-gray-100"
+                          className="w-full text-left px-4 py-3 text-sm rounded-[1rem] hover:bg-gray-50 transition-colors"
                         >
-                          <span className="font-medium text-gray-900">{dest.subdistrict_name}</span>
+                          <span className="font-black text-gray-900">{dest.subdistrict_name}</span>
                           <span className="text-gray-500 ml-2 text-xs">
                             {[dest.district_name, dest.city_name, dest.province].filter(Boolean).join(', ')}
                           </span>
@@ -283,39 +287,39 @@ export default function Checkout() {
                   )}
 
                   {selectedDest && (
-                    <p className="mt-1.5 text-xs text-green-600 font-medium">✓ {selectedDest.label}</p>
+                    <p className="mt-2 text-[10px] font-black text-green-600 uppercase tracking-widest">✓ {selectedDest.label}</p>
                   )}
                 </div>
 
                 {/* Street Address */}
                 <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="address" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
                     Alamat Lengkap (Jalan, No. Rumah, RT/RW, Patokan)
                   </label>
                   <textarea
                     id="address" name="address" rows={3} required
                     value={formData.address} onChange={handleInputChange}
                     placeholder="Cth: Jl. Melati No. 5, RT 02/RW 04, dekat Indomaret"
-                    className="w-full rounded-xl border border-gray-300 py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder-gray-400"
+                    className="w-full rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder-gray-400"
                   />
                 </div>
               </div>
 
               {/* ── 3. Shipping Rate Selection ── */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-primary" /> Pilih Layanan Pengiriman
+                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5 flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-primary" /> Pilih Layanan Pengiriman
                 </h2>
 
                 {!selectedDest ? (
-                  <p className="text-sm text-gray-400 italic">Pilih kecamatan tujuan terlebih dahulu untuk melihat tarif pengiriman.</p>
+                  <p className="text-sm text-gray-400 italic font-medium">Pilih kecamatan tujuan terlebih dahulu untuk melihat tarif pengiriman.</p>
                 ) : loadingShipping ? (
-                  <div className="flex items-center gap-3 py-6 justify-center bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="flex items-center gap-3 py-6 justify-center bg-gray-50 rounded-[1.5rem] border border-gray-100">
                     <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                    <span className="text-sm text-gray-500">Mencari tarif dari Pasar Kemis, Tangerang...</span>
+                    <span className="text-sm text-gray-500 font-medium">Mencari tarif dari Pasar Kemis, Tangerang...</span>
                   </div>
                 ) : shippingError ? (
-                  <p className="text-sm text-red-500 text-center py-4">{shippingError}</p>
+                  <p className="text-sm text-rose-500 font-medium text-center py-4">{shippingError}</p>
                 ) : (
                   <>
                     {/* Courier filter chips */}
@@ -324,10 +328,10 @@ export default function Checkout() {
                         <button
                           key={name} type="button"
                           onClick={() => setActiveCourier(name)}
-                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all
+                          className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all
                             ${activeCourier === name
                               ? 'bg-primary text-white border-primary'
-                              : 'bg-white text-gray-600 border-gray-300 hover:border-primary hover:text-primary'}`}
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-primary hover:text-primary'}`}
                         >
                           {name}
                         </button>
@@ -338,7 +342,7 @@ export default function Checkout() {
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {filteredRates.map((rate, idx) => (
                         <label key={idx}
-                          className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all
+                          className={`flex items-center p-4 border rounded-[1.2rem] cursor-pointer transition-all
                             ${selectedService && selectedService.courier === rate.courier && selectedService.service === rate.service
                               ? 'border-primary bg-primary/5 ring-1 ring-primary'
                               : 'border-gray-200 bg-white hover:border-gray-400'}`}
@@ -351,14 +355,14 @@ export default function Checkout() {
                           />
                           <div className="ml-3 flex-1 min-w-0">
                             <div className="flex justify-between items-baseline gap-2">
-                              <span className="text-sm font-semibold text-gray-900 truncate">
-                                {rate.courier} <span className="font-normal text-gray-600">{rate.service}</span>
+                              <span className="text-sm font-black text-gray-900 truncate">
+                                {rate.courier} <span className="font-medium text-gray-500">{rate.service}</span>
                               </span>
-                              <span className="text-sm font-bold text-gray-900 shrink-0">
+                              <span className="text-sm font-black text-gray-900 shrink-0">
                                 Rp {rate.price.toLocaleString('id-ID')}
                               </span>
                             </div>
-                            <span className="text-xs text-gray-500">{rate.description} · Est. {rate.etd}</span>
+                            <span className="text-xs text-gray-400 font-medium">{rate.description} · Est. {rate.etd}</span>
                           </div>
                         </label>
                       ))}
@@ -368,23 +372,23 @@ export default function Checkout() {
               </div>
 
               {/* ── 4. Payment Summary ── */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-2xl border border-gray-200">
-                <h3 className="font-bold text-gray-900 mb-4">Ringkasan Pembayaran</h3>
-                <div className="space-y-2.5 mb-4 pb-4 border-b border-gray-200 text-sm">
-                  <div className="flex justify-between text-gray-600">
+              <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-4">Ringkasan Pembayaran</h3>
+                <div className="space-y-2.5 mb-4 pb-4 border-b border-gray-200 text-sm font-medium">
+                  <div className="flex justify-between text-gray-500">
                     <span>Subtotal Produk ({cartItems.length} item)</span>
-                    <span className="font-medium text-gray-900">Rp {getCartTotal().toLocaleString('id-ID')}</span>
+                    <span className="font-black text-gray-900">Rp {getCartTotal().toLocaleString('id-ID')}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-500">
                     <span>Ongkos Kirim {selectedService ? `(${selectedService.courier} ${selectedService.service})` : ''}</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-black text-gray-900">
                       {selectedService ? `Rp ${shippingCost.toLocaleString('id-ID')}` : '—'}
                     </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-900">Total</span>
-                  <span className="text-xl font-bold text-primary">
+                  <span className="text-lg font-black text-gray-900 uppercase italic">Total</span>
+                  <span className="text-xl font-black text-primary italic">
                     Rp {(getCartTotal() + shippingCost).toLocaleString('id-ID')}
                   </span>
                 </div>
@@ -392,28 +396,28 @@ export default function Checkout() {
 
               {/* ── 5. Payment Method ── */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Metode Pembayaran</h2>
+                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-4">Metode Pembayaran</h2>
                 <div className="space-y-3">
-                  <div className="p-5 border border-primary rounded-2xl bg-primary/5 ring-1 ring-primary space-y-4">
+                  <div className="p-5 border border-primary rounded-[1.5rem] bg-primary/5 ring-1 ring-primary space-y-4">
                     <label className="flex items-center cursor-pointer">
                       <input type="radio" name="payment_method" defaultChecked className="h-4 w-4 text-primary border-gray-300" />
-                      <span className="ml-3 text-sm font-bold text-gray-900">Transfer Bank Manual</span>
+                      <span className="ml-3 text-[11px] font-black text-gray-900 uppercase tracking-widest">Transfer Bank Manual</span>
                     </label>
-                    <div className="pl-7 space-y-3 text-sm text-gray-600 border-t border-primary/10 pt-4">
-                      <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-primary/20">
+                    <div className="pl-7 space-y-3 text-sm text-gray-500 font-medium border-t border-primary/10 pt-4">
+                      <div className="flex justify-between items-center bg-white p-4 rounded-[1.2rem] border border-primary/20">
                         <div>
-                          <p className="text-xs text-gray-400">BCA</p>
-                          <p className="font-mono font-bold text-gray-900">1234567890</p>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">BCA</p>
+                          <p className="font-mono font-black text-gray-900">1234567890</p>
                           <p className="text-[10px]">a/n NAYEA OFFICIAL</p>
                         </div>
-                        <button type="button" onClick={() => navigator.clipboard.writeText('1234567890')} className="text-xs text-primary font-bold">Salin</button>
+                        <button type="button" onClick={() => navigator.clipboard.writeText('1234567890')} className="text-[10px] text-primary font-black uppercase tracking-widest">Salin</button>
                       </div>
                       <p className="text-[11px] leading-relaxed italic">* Harap simpan bukti transfer untuk dikonfirmasikan via WhatsApp setelah klik tombol "Selesaikan Pesanan".</p>
                     </div>
                   </div>
-                  <label className="flex items-center p-4 border border-gray-200 rounded-2xl opacity-50 cursor-not-allowed">
+                  <label className="flex items-center p-4 border border-gray-200 rounded-[1.5rem] opacity-50 cursor-not-allowed">
                     <input type="radio" name="payment_method" disabled className="h-4 w-4 text-gray-400 border-gray-300" />
-                    <span className="ml-3 text-sm font-medium text-gray-400">QRIS (Segera Hadir)</span>
+                    <span className="ml-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">QRIS (Segera Hadir)</span>
                   </label>
                 </div>
               </div>
@@ -435,12 +439,12 @@ export default function Checkout() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !selectedService}
-                  className="w-full bg-primary hover:bg-primary-dark transition-colors rounded-full py-4 px-6 text-lg font-semibold text-white flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full gradient-primary transition-all rounded-[1.5rem] py-5 px-6 text-[12px] font-black uppercase tracking-widest text-white flex justify-center items-center shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Memproses Pesanan...' : 'Selesaikan Pesanan'}
                 </button>
                 {!selectedService && (
-                  <p className="text-center text-xs text-gray-400 mt-2">Pilih layanan pengiriman untuk melanjutkan.</p>
+                  <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-3">Pilih layanan pengiriman untuk melanjutkan.</p>
                 )}
               </div>
 

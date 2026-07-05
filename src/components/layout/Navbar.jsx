@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Search, Menu, ShoppingBag, User, LogOut, Heart, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
@@ -106,11 +107,14 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer Overlay */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] md:hidden">
-          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsMenuOpen(false)}></div>
-          <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl animate-in slide-in-from-right duration-500 p-8 flex flex-col">
+      {/* Mobile Drawer Overlay — rendered via portal so it escapes the nav's
+          backdrop-blur containing block (backdrop-filter establishes a
+          containing block for fixed descendants in Chromium/WebKit, which
+          was clipping this drawer to the nav bar's own height). */}
+      {isMenuOpen && createPortal(
+        <div className="fixed inset-0 z-[100] md:hidden isolate">
+          <div className="absolute inset-0 z-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>
+          <div className="absolute right-0 top-0 z-10 h-full w-4/5 max-w-sm bg-white shadow-2xl p-8 flex flex-col overflow-y-auto">
             <div className="flex justify-between items-center mb-12">
               <span className="text-2xl font-black font-heading text-gray-900 italic uppercase tracking-tighter">NAYEA<span className="text-primary not-italic">.</span>ID</span>
               <button onClick={() => setIsMenuOpen(false)} className="p-3 bg-gray-50 rounded-2xl text-gray-400 active:scale-90 transition-all"><X className="w-6 h-6" /></button>
@@ -142,7 +146,8 @@ export default function Navbar() {
                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] italic text-center">Nayea Official Store</p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </nav>
   );
