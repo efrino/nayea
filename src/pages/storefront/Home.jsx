@@ -62,7 +62,7 @@ export default function Home() {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <section className="relative group overflow-hidden">
+      <section className="relative group overflow-hidden min-h-[70vh] lg:min-h-[90vh]">
         <div className="absolute inset-0 transition-all duration-1000">
           {isVideoUrl(activeBannerImage) ? (
             <video
@@ -103,55 +103,74 @@ export default function Home() {
           </div>
         )}
 
-        {banners.length > 0 && (
-          <div className="relative max-w-7xl mx-auto px-6 sm:px-8 py-32 sm:py-48 flex flex-col justify-center min-h-[70vh] lg:min-h-[90vh] z-20">
-            <div className="max-w-3xl">
-              <span className="inline-block px-4 py-2 bg-primary/20 backdrop-blur-md text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-6 italic animate-in fade-in slide-in-from-left duration-700">
-                New Arrival 2026
-              </span>
-              <h1 className="text-5xl md:text-8xl font-black font-heading text-white tracking-tighter leading-[0.9] mb-8 drop-shadow-2xl italic uppercase animate-in fade-in slide-in-from-left duration-700 delay-100">
-                {banners[currentBannerIdx]?.title}
-              </h1>
-              {banners[currentBannerIdx]?.description && (
-                <p className="max-w-xl text-lg md:text-2xl text-gray-200 font-medium mb-12 drop-shadow-lg leading-relaxed tracking-wide opacity-90 animate-in fade-in slide-in-from-left duration-700 delay-200">
-                  {banners[currentBannerIdx].description}
-                </p>
-              )}
-              {banners[currentBannerIdx]?.link_url && (
-                <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-left duration-700 delay-300">
-                  {(() => {
-                    let url = banners[currentBannerIdx].link_url.trim();
-                    let isExternal = false;
+        <div className="relative max-w-7xl mx-auto px-6 sm:px-8 py-32 sm:py-48 flex flex-col justify-center min-h-[70vh] lg:min-h-[90vh] z-20">
+          <div className="max-w-3xl">
+            {banners.length > 0 ? (
+              <>
+                <span className="inline-block px-4 py-2 bg-primary/20 backdrop-blur-md text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-6 italic animate-in fade-in slide-in-from-left duration-700">
+                  New Arrival 2026
+                </span>
+                <h1 className="text-5xl md:text-8xl font-black font-heading text-white tracking-tighter leading-[0.9] mb-8 drop-shadow-2xl italic uppercase animate-in fade-in slide-in-from-left duration-700 delay-100">
+                  {banners[currentBannerIdx]?.title}
+                </h1>
+                {banners[currentBannerIdx]?.description && (
+                  <p className="max-w-xl text-lg md:text-2xl text-gray-200 font-medium mb-12 drop-shadow-lg leading-relaxed tracking-wide opacity-90 animate-in fade-in slide-in-from-left duration-700 delay-200">
+                    {banners[currentBannerIdx].description}
+                  </p>
+                )}
+                {banners[currentBannerIdx]?.link_url && (
+                  <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-left duration-700 delay-300">
+                    {(() => {
+                      let url = banners[currentBannerIdx].link_url.trim();
+                      let isExternal = false;
 
-                    if (url.match(/^https?:\/\//)) {
-                      isExternal = true;
-                    } else if (url.match(/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/)) {
-                      isExternal = true;
-                      url = `https://${url}`;
-                    } else if (!url.startsWith('/')) {
-                      url = `/${url}`;
-                    }
+                      if (url.match(/^https?:\/\//)) {
+                        isExternal = true;
+                      } else if (url.match(/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/)) {
+                        isExternal = true;
+                        url = `https://${url}`;
+                      } else if (!url.startsWith('/')) {
+                        url = `/${url}`;
+                      }
 
-                    const commonClasses = "inline-flex items-center justify-center px-10 py-5 rounded-[1.8rem] text-[12px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl";
-                    
-                    if (isExternal) {
+                      const commonClasses = "inline-flex items-center justify-center px-10 py-5 rounded-[1.8rem] text-[12px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl";
+
+                      if (isExternal) {
+                        return (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-white text-gray-900 hover:bg-gray-50`}>
+                            Explore Collection <ArrowRight className="ml-3 w-5 h-5" />
+                          </a>
+                        );
+                      }
                       return (
-                        <a href={url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-white text-gray-900 hover:bg-gray-50`}>
-                          Explore Collection <ArrowRight className="ml-3 w-5 h-5" />
-                        </a>
+                        <Link to={url} className={`${commonClasses} gradient-primary text-white hover:shadow-primary/30`}>
+                          Shop The Look <ArrowRight className="ml-3 w-5 h-5" />
+                        </Link>
                       );
-                    }
-                    return (
-                      <Link to={url} className={`${commonClasses} gradient-primary text-white hover:shadow-primary/30`}>
-                        Shop The Look <ArrowRight className="ml-3 w-5 h-5" />
-                      </Link>
-                    );
-                  })()}
+                    })()}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="inline-block px-4 py-2 bg-primary/20 backdrop-blur-md text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-6 italic animate-in fade-in slide-in-from-left duration-700">
+                  Nayea.id
+                </span>
+                <h1 className="text-5xl md:text-8xl font-black font-heading text-white tracking-tighter leading-[0.9] mb-8 drop-shadow-2xl italic uppercase animate-in fade-in slide-in-from-left duration-700 delay-100">
+                  Modern &amp; Modesty
+                </h1>
+                <p className="max-w-xl text-lg md:text-2xl text-gray-200 font-medium mb-12 drop-shadow-lg leading-relaxed tracking-wide opacity-90 animate-in fade-in slide-in-from-left duration-700 delay-200">
+                  Premium quality kerudung and modest fashion, curated for the modern woman.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-left duration-700 delay-300">
+                  <Link to="/catalog" className="inline-flex items-center justify-center px-10 py-5 rounded-[1.8rem] text-[12px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl gradient-primary text-white hover:shadow-primary/30">
+                    Shop The Look <ArrowRight className="ml-3 w-5 h-5" />
+                  </Link>
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Dots */}
         {banners.length > 1 && (
