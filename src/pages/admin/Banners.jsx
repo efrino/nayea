@@ -226,8 +226,8 @@ export default function Banners() {
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Judul Promo <span className="text-rose-500 font-bold">*</span></label>
-                     <input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Ramadhan Sale" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
+                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Label Kecil di Atas Judul (Eyebrow)</label>
+                     <input type="text" value={formData.tag_label} onChange={(e) => setFormData({ ...formData, tag_label: e.target.value })} placeholder="e.g. NEW ARRIVAL 2026" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
                   </div>
                   <div className="space-y-2">
                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tautan / Link</label>
@@ -236,8 +236,8 @@ export default function Banners() {
                </div>
 
                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Label Kecil di Atas Judul (Eyebrow)</label>
-                  <input type="text" value={formData.tag_label} onChange={(e) => setFormData({ ...formData, tag_label: e.target.value })} placeholder="e.g. NEW ARRIVAL 2026, SALE 50%" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Judul Promo <span className="text-rose-500 font-bold">*</span></label>
+                  <input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Koleksi Ramadhan Terbaru Sudah Hadir" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
                </div>
 
                <div className="space-y-2">
