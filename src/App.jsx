@@ -12,6 +12,7 @@ import StoreLogin from './pages/storefront/StoreLogin';
 import StoreRegister from './pages/storefront/StoreRegister';
 import Profile from './pages/storefront/Profile';
 import ForgotPassword from './pages/storefront/ForgotPassword';
+import ResetPassword from './pages/storefront/ResetPassword';
 import About from './pages/storefront/About';
 import Faq from './pages/storefront/Faq';
 import Shipping from './pages/storefront/Shipping';
@@ -56,6 +57,7 @@ function App() {
               <Route path="login" element={<StoreLogin />} />
               <Route path="register" element={<StoreRegister />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password" element={<ResetPassword />} />
               <Route path="about" element={<About />} />
               <Route path="faq" element={<Faq />} />
               <Route path="shipping" element={<Shipping />} />
