@@ -111,7 +111,7 @@ export default function Home() {
             {banners.length > 0 ? (
               <>
                 <span className="inline-block px-4 py-2 bg-primary/20 backdrop-blur-md text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-6 italic animate-in fade-in slide-in-from-left duration-700">
-                  New Arrival 2026
+                  {banners[currentBannerIdx]?.tag_label || 'Nayea.id'}
                 </span>
                 <h1 className="text-5xl md:text-8xl font-black font-heading text-white tracking-tighter leading-[0.9] mb-8 drop-shadow-2xl italic uppercase animate-in fade-in slide-in-from-left duration-700 delay-100">
                   {banners[currentBannerIdx]?.title}

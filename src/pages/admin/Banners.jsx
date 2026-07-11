@@ -17,6 +17,7 @@ export default function Banners() {
     id: null,
     title: '',
     description: '',
+    tag_label: '',
     image_url: '',
     link_url: '',
     active: true
@@ -48,19 +49,20 @@ export default function Banners() {
         id: banner.id,
         title: banner.title || '',
         description: banner.description || '',
+        tag_label: banner.tag_label || '',
         image_url: banner.image_url,
         link_url: banner.link_url || '',
         active: banner.active
       });
     } else {
-      setFormData({ id: null, title: '', description: '', image_url: '', link_url: '', active: true });
+      setFormData({ id: null, title: '', description: '', tag_label: '', image_url: '', link_url: '', active: true });
     }
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setFormData({ id: null, title: '', description: '', image_url: '', link_url: '', active: true });
+    setFormData({ id: null, title: '', description: '', tag_label: '', image_url: '', link_url: '', active: true });
   };
 
   const handleImageUpload = async (e) => {
@@ -88,6 +90,7 @@ export default function Banners() {
     const payload = {
       title: formData.title,
       description: formData.description,
+      tag_label: formData.tag_label,
       link_url: formData.link_url,
       image_url: formData.image_url,
       active: formData.active
@@ -230,6 +233,11 @@ export default function Banners() {
                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tautan / Link</label>
                      <input type="text" value={formData.link_url} onChange={(e) => setFormData({ ...formData, link_url: e.target.value })} placeholder="/catalog" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
                   </div>
+               </div>
+
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Label Kecil di Atas Judul (Eyebrow)</label>
+                  <input type="text" value={formData.tag_label} onChange={(e) => setFormData({ ...formData, tag_label: e.target.value })} placeholder="e.g. NEW ARRIVAL 2026, SALE 50%" className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm transition-all" />
                </div>
 
                <div className="space-y-2">

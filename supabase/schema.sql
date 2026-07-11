@@ -93,6 +93,10 @@ create table if not exists banners (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Phase 15: Eyebrow/tag label above the hero title (e.g. "NEW ARRIVAL 2026", "SALE 50%")
+alter table banners
+  add column if not exists tag_label text;
+
 -- Table: messages (for chat)
 drop table if exists messages cascade;
 create table messages (
