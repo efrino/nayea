@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag, Chrome } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { ShoppingBag, Chrome, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function StoreLogin() {
@@ -9,6 +9,16 @@ export default function StoreLogin() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const showResetSuccess = searchParams.get('reset') === 'success';
+
+    useEffect(() => {
+        if (showResetSuccess) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -69,6 +79,12 @@ export default function StoreLogin() {
             <div className="mt-12 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
                 <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-gray-100 sm:px-12">
                     <form className="space-y-8" onSubmit={handleLogin}>
+                        {showResetSuccess && (
+                            <div className="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest italic leading-relaxed">Password berhasil direset. Silakan login dengan password baru Anda.</p>
+                            </div>
+                        )}
                         {error && (
                             <div className="bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl animate-in fade-in slide-in-from-top-2">
                                 <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest italic leading-relaxed">{error}</p>
@@ -91,7 +107,7 @@ export default function StoreLogin() {
                             <div>
                                 <div className="flex items-center justify-between mb-3">
                                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Password</label>
-                                    <Link to="#" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline italic">Forgot?</Link>
+                                    <Link to="/forgot-password" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline italic">Forgot?</Link>
                                 </div>
                                 <input
                                     type="password"
