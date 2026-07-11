@@ -52,7 +52,7 @@ export default function Navbar() {
           {/* Icons */}
           <div className="flex items-center gap-2 sm:gap-4">
             {isStaff(session?.user?.user_metadata?.role) && (
-              <Link to="/admin" className="hidden lg:inline-flex items-center px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 hover:bg-primary/10 transition-all border border-primary/10">
+              <Link to="/admin" className="hidden md:inline-flex items-center px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 hover:bg-primary/10 transition-all border border-primary/10">
                 Admin Portal
               </Link>
             )}
@@ -133,6 +133,9 @@ export default function Navbar() {
                          <p className="text-lg font-black font-heading text-gray-900 tracking-tight italic uppercase">{user.user_metadata?.full_name}</p>
                          <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2">Lihat Profil &rarr;</p>
                       </Link>
+                      {isStaff(user.user_metadata?.role) && (
+                        <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="w-full py-4 bg-primary/5 text-primary rounded-[1.5rem] text-center font-black text-xs uppercase tracking-widest border border-primary/10 transition-all">ADMIN PORTAL</Link>
+                      )}
                       <button onClick={() => { logout(); setIsMenuOpen(false); }} className="w-full py-4 bg-rose-50 text-rose-500 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all">LOGOUT ACCOUNT</button>
                    </>
                  ) : (
