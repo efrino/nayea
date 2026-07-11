@@ -78,10 +78,10 @@ export default function Navbar() {
             {/* Customer Authentication (Desktop) */}
             {user ? (
               <div className="hidden md:flex items-center gap-4 ml-4 pl-4 border-l border-gray-100">
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter italic">{user.user_metadata?.full_name || 'Customer'}</span>
+                <Link to="/profile" className="flex flex-col items-end group">
+                  <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter italic group-hover:text-primary transition-colors">{user.user_metadata?.full_name || 'Customer'}</span>
                   <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.1em]">Verified Account</span>
-                </div>
+                </Link>
                 <button onClick={logout} className="p-2.5 bg-gray-50 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all" title="Logout">
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -127,10 +127,11 @@ export default function Navbar() {
               <div className="mt-4 pt-8 border-t border-gray-50 flex flex-col gap-4">
                  {user ? (
                    <>
-                      <div className="p-6 rounded-3xl bg-gray-50 border border-gray-100">
+                      <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="block p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:border-primary/20 transition-all">
                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Signed in as</p>
                          <p className="text-lg font-black font-heading text-gray-900 tracking-tight italic uppercase">{user.user_metadata?.full_name}</p>
-                      </div>
+                         <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2">Lihat Profil &rarr;</p>
+                      </Link>
                       <button onClick={() => { logout(); setIsMenuOpen(false); }} className="w-full py-4 bg-rose-50 text-rose-500 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all">LOGOUT ACCOUNT</button>
                    </>
                  ) : (

@@ -10,6 +10,7 @@ import Wishlist from './pages/storefront/Wishlist';
 import Checkout from './pages/storefront/Checkout';
 import StoreLogin from './pages/storefront/StoreLogin';
 import StoreRegister from './pages/storefront/StoreRegister';
+import Profile from './pages/storefront/Profile';
 import About from './pages/storefront/About';
 import Faq from './pages/storefront/Faq';
 import Shipping from './pages/storefront/Shipping';
@@ -50,6 +51,7 @@ function App() {
               <Route path="cart" element={<Cart />} />
               <Route path="wishlist" element={<Wishlist />} />
               <Route path="checkout" element={<Checkout />} />
+              <Route path="profile" element={<Profile />} />
               <Route path="login" element={<StoreLogin />} />
               <Route path="register" element={<StoreRegister />} />
               <Route path="about" element={<About />} />

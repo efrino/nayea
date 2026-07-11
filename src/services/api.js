@@ -257,6 +257,77 @@ export async function getOrders() {
 }
 
 /**
+ * Riwayat pesanan milik satu customer saja (dipakai di halaman Profil)
+ */
+export async function getMyOrders(userId) {
+  if (!userId) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, order_items(*, product:products(*))")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  return { data, error };
+}
+
+// ==========================================
+// ADDRESS BOOK SERVICES
+// ==========================================
+
+export async function getAddresses(userId) {
+  if (!userId) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from("addresses")
+    .select("*")
+    .eq("user_id", userId)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  return { data, error };
+}
+
+export async function createAddress(addressData) {
+  const { data, error } = await supabase
+    .from("addresses")
+    .insert([addressData])
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function updateAddress(id, addressData) {
+  const { data, error } = await supabase
+    .from("addresses")
+    .update(addressData)
+    .eq("id", id)
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function deleteAddress(id) {
+  const { error } = await supabase.from("addresses").delete().eq("id", id);
+  return { error };
+}
+
+/**
+ * Set satu alamat jadi default, otomatis un-default alamat lain milik user yang sama
+ */
+export async function setDefaultAddress(userId, addressId) {
+  const { error: clearError } = await supabase
+    .from("addresses")
+    .update({ is_default: false })
+    .eq("user_id", userId);
+  if (clearError) return { error: clearError };
+
+  const { error } = await supabase
+    .from("addresses")
+    .update({ is_default: true })
+    .eq("id", addressId);
+  return { error };
+}
+
+/**
  * Buat pesanan baru beserta detail itemnya
  * @param {Object} orderData - Data pesanan dari form checkout
  * @param {Array} cartItems - Daftar item di keranjang

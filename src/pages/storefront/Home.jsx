@@ -39,12 +39,15 @@ export default function Home() {
       // Clean up URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
-      
-      // Auto-hide after 5s
-      const timer = setTimeout(() => setShowLoginSuccess(false), 5000);
-      return () => clearTimeout(timer);
     }
   }, []);
+
+  // Auto-hide the login success toast 4s after it appears
+  useEffect(() => {
+    if (!showLoginSuccess) return;
+    const timer = setTimeout(() => setShowLoginSuccess(false), 4000);
+    return () => clearTimeout(timer);
+  }, [showLoginSuccess]);
 
   // Auto-rotate banners every 5 seconds
   useEffect(() => {

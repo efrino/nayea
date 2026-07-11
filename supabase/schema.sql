@@ -70,6 +70,18 @@ create table if not exists order_items (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Table: addresses (saved shipping addresses per customer)
+create table if not exists addresses (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  label text not null default 'Rumah',
+  recipient_name text not null,
+  phone text not null,
+  full_address text not null,
+  is_default boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Table: banners
 create table if not exists banners (
   id uuid default uuid_generate_v4() primary key,
@@ -144,6 +156,15 @@ with check (auth.role() = 'authenticated' AND user_id = auth.uid());
 drop policy if exists "Users can manage their own carts" on cart_items;
 create policy "Users can manage their own carts"
 on cart_items for all
+using (auth.role() = 'authenticated' AND user_id = auth.uid())
+with check (auth.role() = 'authenticated' AND user_id = auth.uid());
+
+-- 1.6 ADDRESSES POLICIES
+alter table addresses enable row level security;
+
+drop policy if exists "Users can manage their own addresses" on addresses;
+create policy "Users can manage their own addresses"
+on addresses for all
 using (auth.role() = 'authenticated' AND user_id = auth.uid())
 with check (auth.role() = 'authenticated' AND user_id = auth.uid());
 
