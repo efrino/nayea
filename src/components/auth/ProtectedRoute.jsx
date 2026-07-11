@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/roles';
 
 export default function ProtectedRoute({ children }) {
     const { session, loading } = useAuth();
@@ -13,7 +14,7 @@ export default function ProtectedRoute({ children }) {
         );
     }
 
-    const isAdmin = session?.user?.user_metadata?.role === 'admin';
+    const isAdmin = isStaff(session?.user?.user_metadata?.role);
 
     if (!session) {
         // Not logged in at all, send to admin login

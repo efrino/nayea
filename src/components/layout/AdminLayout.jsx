@@ -1,27 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Package, 
-  LayoutDashboard, 
-  Image as ImageIcon, 
-  ShoppingCart, 
-  MessageSquare, 
-  LogOut, 
+import {
+  Package,
+  LayoutDashboard,
+  Image as ImageIcon,
+  ShoppingCart,
+  MessageSquare,
+  LogOut,
   CreditCard,
   Menu,
   X,
   Bell,
-  ChevronRight
+  ChevronRight,
+  Users as UsersIcon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { isSuperAdmin } from '../../lib/roles';
 
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, session } = useAuth();
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const currentRole = session?.user?.user_metadata?.role;
+  const isSuper = isSuperAdmin(currentRole);
 
   // Request browser notification permission once
   useEffect(() => {
@@ -87,6 +91,7 @@ export default function AdminLayout() {
     { name: 'Payments', path: '/admin/payments', icon: CreditCard },
     { name: 'Banners', path: '/admin/banners', icon: ImageIcon },
     { name: 'Chat Inbox', path: '/admin/chat', icon: MessageSquare, badge: unreadChatCount },
+    ...(isSuper ? [{ name: 'User Management', path: '/admin/users', icon: UsersIcon }] : []),
   ];
 
   const SidebarContent = () => (
@@ -137,10 +142,12 @@ export default function AdminLayout() {
       <div className="p-4 mt-auto">
         <div className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-100">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">A</div>
-            <div>
-              <p className="text-sm font-bold text-gray-900 leading-none">Administrator</p>
-              <p className="text-[10px] text-gray-400 mt-1">Super Admin Role</p>
+            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">
+              {session?.user?.email?.charAt(0).toUpperCase() || 'A'}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900 leading-none truncate">{session?.user?.email || 'Administrator'}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{isSuper ? 'Superadmin Role' : 'Admin Role'}</p>
             </div>
           </div>
           <button

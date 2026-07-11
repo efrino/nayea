@@ -5,6 +5,7 @@ import { Search, Menu, ShoppingBag, User, LogOut, Heart, X } from 'lucide-react'
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { getWishlists } from '../../services/api';
+import { isStaff } from '../../lib/roles';
 
 export default function Navbar() {
   const { getCartCount } = useCart();
@@ -50,7 +51,7 @@ export default function Navbar() {
 
           {/* Icons */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {session?.user?.user_metadata?.role === 'admin' && (
+            {isStaff(session?.user?.user_metadata?.role) && (
               <Link to="/admin" className="hidden lg:inline-flex items-center px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 hover:bg-primary/10 transition-all border border-primary/10">
                 Admin Portal
               </Link>

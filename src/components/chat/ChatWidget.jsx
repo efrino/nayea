@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Lock, Package, ChevronRight } from 'lucide-reac
 import { supabase } from '../../lib/supabase';
 import { getMessages, sendMessage, markAdminMessagesRead, markAdminMessagesDelivered } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/roles';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function ChatWidget() {
@@ -19,7 +20,7 @@ export default function ChatWidget() {
   const { user } = useAuth(); // Customer must be logged in
 
   // Admin check is used later to prevent rendering the UI
-  const isAdmin = user?.user_metadata?.role === 'admin';
+  const isAdmin = isStaff(user?.user_metadata?.role);
 
   // Detect product page
   useEffect(() => {

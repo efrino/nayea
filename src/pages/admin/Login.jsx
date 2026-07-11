@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isStaff } from '../../lib/roles';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ export default function Login() {
   // If already logged in, redirect them away from the login page ONLY if they are an admin
   useEffect(() => {
     if (session) {
-      if (session.user?.user_metadata?.role === 'admin') {
+      if (isStaff(session.user?.user_metadata?.role)) {
         navigate('/admin', { replace: true });
       } else {
         // If they are logged in but not an admin (a customer wandering here)
@@ -37,7 +38,7 @@ export default function Login() {
       setErrorMsg(error.message);
       setIsLoading(false);
     } else {
-      if (data?.user?.user_metadata?.role === 'admin') {
+      if (isStaff(data?.user?.user_metadata?.role)) {
         // Send them to the page they tried to visit, or dashboard by default
         const destination = location.state?.from?.pathname || '/admin';
         navigate(destination, { replace: true });

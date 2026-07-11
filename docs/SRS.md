@@ -48,13 +48,19 @@ Storage buckets: `products` (public read, admin write), `banners` (public read, 
 
 ## 3. Model Otorisasi
 
-- Role disimpan di `auth.users.raw_user_meta_data.role`, **bukan** kolom database terpisah.
-- Trigger `on_auth_user_created` (lihat schema.sql) otomatis set role:
-  - `admin` **hanya** jika email cocok dengan email admin yang di-hardcode di trigger (`efrinowep@gmail.com`).
-  - Semua email lain dipaksa jadi `customer`, override apa pun yang dikirim client — mencegah user self-assign role admin.
-- RLS (Row Level Security) aktif di semua tabel; setiap policy mengecek `auth.uid()` (kepemilikan data) atau `(auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'`.
+- Tiga role: `superadmin` (tepat satu, `efrinowep@gmail.com`), `admin` (banyak, dikelola superadmin), `customer` ("Member" di UI). Role disimpan di `auth.users.raw_user_meta_data.role`, **bukan** kolom database terpisah.
+- Trigger `on_auth_user_created` (lihat schema.sql) otomatis set role saat signup:
+  - `superadmin` **hanya** jika email cocok dengan email yang di-hardcode di trigger.
+  - Semua email lain dipaksa jadi `customer`, override apa pun yang dikirim client — mencegah user self-assign role admin/superadmin. User baru **tidak pernah** langsung jadi `admin` lewat signup; harus dipromosikan manual oleh superadmin setelah akun dibuat.
+- **Perbedaan `admin` vs `superadmin`:** identik di semua modul (produk, order, banner, chat, dll) — satu-satunya beda adalah akses ke halaman **Manajemen User** (`/admin/users`), yang hanya bisa diakses & dipakai oleh `superadmin`.
+- RLS (Row Level Security) aktif di semua tabel; policy staff pakai helper SQL `public.is_staff()` (true untuk `admin` maupun `superadmin`) alih-alih membandingkan string `'admin'` langsung — supaya konsisten dan tidak ada policy yang lupa meng-include superadmin. Ada juga `public.is_superadmin()` untuk kasus yang butuh strict-superadmin (saat ini tidak dipakai di RLS, hanya di server-side check).
+- Di kode frontend, pengecekan role staff **wajib** lewat helper [src/lib/roles.js](../src/lib/roles.js) (`isStaff`, `isSuperAdmin`), bukan `=== 'admin'` manual.
 - **Requirement:** setiap tabel baru wajib punya RLS + policy eksplisit sebelum dipakai di production — jangan andalkan `anon key` tanpa RLS.
-- **Catatan keamanan yang perlu diperhatikan:** admin email untuk auto-assign role di-hardcode di function SQL. Kalau perlu tambah admin lain, harus lewat migrasi SQL manual (update trigger atau `raw_user_meta_data`), bukan lewat UI — pastikan proses ini terdokumentasi kalau ada admin kedua.
+- **Manajemen role admin (promote/demote):** dilakukan lewat `api/admin-list-users.js` (GET, list semua user) dan `api/admin-set-role.js` (POST, ubah role antara `admin` ⇄ `customer`). Kedua endpoint ini:
+  - Butuh `SUPABASE_SERVICE_ROLE_KEY` (server-only env var, **jangan** prefix `VITE_`) untuk memanggil Supabase Admin API (`auth.admin.listUsers`/`updateUserById`) — operasi ini tidak bisa dilakukan client-side dengan anon/publishable key.
+  - Memverifikasi caller adalah `superadmin` **di server**, dengan cara memvalidasi access token (`Authorization: Bearer <token>`) lewat `auth.getUser(token)` sebelum melakukan operasi apa pun — jangan pernah percaya role dari client tanpa verifikasi ulang di server.
+  - Menolak permintaan yang mencoba mengubah role user yang statusnya sudah `superadmin` (satu-satunya superadmin tidak bisa diubah/dicabut lewat endpoint ini).
+- **Catatan keamanan:** email superadmin di-hardcode di trigger SQL. Kalau perlu ganti superadmin, harus lewat migrasi SQL manual (update trigger + `raw_user_meta_data` user lama), bukan lewat UI.
 
 ## 4. Functional Requirements
 

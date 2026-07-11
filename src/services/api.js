@@ -511,3 +511,42 @@ export async function markAdminMessagesDelivered(userId) {
     .eq("status", "sent");
   return { error };
 }
+
+// ==========================================
+// USER MANAGEMENT SERVICES (superadmin only)
+// These call Vercel serverless functions that use the Supabase service
+// role key server-side — that key must never reach the client bundle.
+// ==========================================
+
+async function authorizedFetch(url, options = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { data: null, error: new Error(json.error || `Request failed (${res.status})`) };
+  }
+  return { data: json, error: null };
+}
+
+export async function listAllUsers() {
+  const { data, error } = await authorizedFetch("/api/admin-list-users");
+  return { data: data?.users || null, error };
+}
+
+export async function setUserRole(userId, role) {
+  const { data, error } = await authorizedFetch("/api/admin-set-role", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, role }),
+  });
+  return { data: data?.user || null, error };
+}

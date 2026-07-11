@@ -45,13 +45,14 @@ supabase/       — schema.sql (tables + RLS policies), functions/shipping (Edge
 - Komponen `.jsx`, functional components + hooks. Tidak ada TypeScript di project ini — jangan perkenalkan `.tsx` tanpa diskusi dulu.
 - Styling: Tailwind utility classes langsung di JSX. Warna/font harus lewat token di `@theme` ([src/index.css](src/index.css)), bukan hex literal.
 - Signature visual brand saat ini: heading besar bold-black italic uppercase, tracking lebar, radius besar (`rounded-[2rem]`+), shadow lembut. Lihat detail lengkap di [docs/PRD.md](docs/PRD.md#design-system).
-- Role user (`customer` / `admin`) di-enforce lewat Supabase `auth.jwt() -> user_metadata ->> role`, bukan lewat field terpisah — lihat trigger `on_auth_user_created` di [supabase/schema.sql](supabase/schema.sql).
+- Role user (`customer` / `admin` / `superadmin`) di-enforce lewat Supabase `auth.jwt() -> user_metadata ->> role`, bukan lewat field terpisah — lihat trigger `on_auth_user_created` di [supabase/schema.sql](supabase/schema.sql). Ada tepat satu `superadmin` (email di-hardcode di trigger); satu-satunya beda dari `admin` biasa adalah akses ke halaman Manajemen User (`/admin/users`). Cek role lewat helper [src/lib/roles.js](src/lib/roles.js) (`isStaff`, `isSuperAdmin`) — jangan bandingkan string `'admin'` manual, supaya `superadmin` tidak ketinggalan saat pengecekan baru ditambahkan.
 - Jangan commit perubahan skema tanpa update `supabase/schema.sql` — itu source of truth untuk struktur DB & RLS.
 
 ## Environment variables (jangan pernah commit isinya)
 
 File `.env`, `.env.local`, `supabase/.env` sudah di-`.gitignore`. Variabel yang dipakai:
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — lihat [.env.example](.env.example)
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` — lihat [.env.example](.env.example)
+- `SUPABASE_SERVICE_ROLE_KEY` — **jangan pernah** prefix `VITE_` (bakal ke-bundle ke client). Dipakai server-side saja di `api/admin-list-users.js` dan `api/admin-set-role.js` untuk fitur Manajemen User (superadmin-only).
 - Kredensial shipping API (RajaOngkir/sejenis) dipakai di `api/shipping-*.js` — cek `.env` lokal, jangan expose ke client bundle.
 
 Kalau menambah env var baru: tambahkan juga ke `.env.example` (tanpa isi asli) supaya orang lain tahu apa yang dibutuhkan.

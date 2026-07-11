@@ -3,6 +3,19 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
+-- Phase 16: Role helpers — single source of truth for "who counts as staff".
+-- superadmin has every admin permission PLUS user management (see api/admin-*.js);
+-- there is exactly one superadmin, assigned by email in the trigger below.
+create or replace function public.is_staff()
+returns boolean as $$
+  select coalesce((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'superadmin'), false);
+$$ language sql stable;
+
+create or replace function public.is_superadmin()
+returns boolean as $$
+  select coalesce((auth.jwt() -> 'user_metadata' ->> 'role') = 'superadmin', false);
+$$ language sql stable;
+
 -- Table: products
 create table if not exists products (
   id uuid default uuid_generate_v4() primary key,
@@ -132,19 +145,19 @@ drop policy if exists "Admin can insert products" on products;
 drop policy if exists "Anyone can insert products" on products;
 create policy "Admin can insert products" 
 on products for insert 
-with check ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+with check (public.is_staff());
 
 drop policy if exists "Admin can update products" on products;
 drop policy if exists "Anyone can update products" on products;
 create policy "Admin can update products" 
 on products for update 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 drop policy if exists "Admin can delete products" on products;
 drop policy if exists "Anyone can delete products" on products;
 create policy "Admin can delete products" 
 on products for delete 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 -- 1.5 WISHLISTS & CART_ITEMS POLICIES
 alter table wishlists enable row level security;
@@ -186,7 +199,7 @@ with check (true);
 drop policy if exists "Users can view their own orders" on orders;
 create policy "Users can view their own orders"
 on orders for select
-using (auth.uid() = user_id OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (auth.uid() = user_id OR public.is_staff());
 
 drop policy if exists "Anyone can insert order_items" on order_items;
 create policy "Anyone can insert order_items" 
@@ -201,7 +214,7 @@ using (
   exists (
     select 1 from orders 
     where orders.id = order_items.order_id 
-    and (orders.user_id = auth.uid() OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+    and (orders.user_id = auth.uid() OR public.is_staff())
   )
 );
 
@@ -210,19 +223,19 @@ drop policy if exists "Admin can view orders" on orders;
 drop policy if exists "Anyone can view orders" on orders;
 create policy "Admin can view orders" 
 on orders for select 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 drop policy if exists "Admin can update orders" on orders;
 drop policy if exists "Anyone can update orders" on orders;
 create policy "Admin can update orders" 
 on orders for update 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 drop policy if exists "Admin can view order_items" on order_items;
 drop policy if exists "Anyone can view order_items" on order_items;
 create policy "Admin can view order_items" 
 on order_items for select 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 
 -- 3. STORAGE POLICIES (Run this manually in SQL Editor if bucket policies fail in dashboard)
@@ -243,19 +256,19 @@ drop policy if exists "Admin can upload product images" on storage.objects;
 drop policy if exists "Anyone can upload product images" on storage.objects;
 create policy "Admin can upload product images"
 on storage.objects for insert
-with check ( bucket_id = 'products' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
+with check ( bucket_id = 'products' AND public.is_staff() );
 
 drop policy if exists "Admin can update product images" on storage.objects;
 drop policy if exists "Anyone can update product images" on storage.objects;
 create policy "Admin can update product images"
 on storage.objects for update
-using ( bucket_id = 'products' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
+using ( bucket_id = 'products' AND public.is_staff() );
 
 drop policy if exists "Admin can delete product images" on storage.objects;
 drop policy if exists "Anyone can delete product images" on storage.objects;
 create policy "Admin can delete product images"
 on storage.objects for delete
-using ( bucket_id = 'products' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
+using ( bucket_id = 'products' AND public.is_staff() );
 
 
 -- 4. BANNERS TABLE POLICIES
@@ -269,17 +282,17 @@ using (true);
 drop policy if exists "Admin can insert banners" on banners;
 create policy "Admin can insert banners" 
 on banners for insert 
-with check ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+with check (public.is_staff());
 
 drop policy if exists "Admin can update banners" on banners;
 create policy "Admin can update banners" 
 on banners for update 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 drop policy if exists "Admin can delete banners" on banners;
 create policy "Admin can delete banners" 
 on banners for delete 
-using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+using (public.is_staff());
 
 
 -- 5. MESSAGES TABLE POLICIES (Live Chat)
@@ -292,7 +305,7 @@ on messages for insert
 with check (
   auth.role() = 'authenticated' AND (
     (user_id = auth.uid() AND sender = 'customer') OR 
-    ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' AND sender = 'admin')
+    (public.is_staff() AND sender = 'admin')
   )
 );
 
@@ -303,7 +316,7 @@ on messages for select
 using (
   auth.role() = 'authenticated' AND (
     user_id = auth.uid() OR 
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    public.is_staff()
   )
 );
 
@@ -312,10 +325,10 @@ drop policy if exists "Admin can update message status" on messages;
 create policy "Admin can update message status"
 on messages for update
 using (
-  (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  public.is_staff()
 )
 with check (
-  (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  public.is_staff()
 );
 
 -- Customer can update status of ADMIN messages in their own session
@@ -351,13 +364,15 @@ alter table messages replica identity full;
 -- 6. AUTHENTICATION TRIGGERS (Auto-Role Assignment)
 -- ==============================================================================
 
--- Create a function to force 'customer' role, except for the designated admin email
+-- Create a function to force 'customer' role, except for the one hardcoded superadmin email.
+-- New admins are never assigned here — they start as 'customer' and get promoted to 'admin'
+-- later by the superadmin via the User Management page (api/admin-set-role.js).
 create or replace function public.on_auth_user_created()
 returns trigger as $$
 begin
-  -- If the email belongs to the predefined super admin
+  -- The single predefined superadmin
   if new.email = 'efrinowep@gmail.com' then
-    new.raw_user_meta_data = coalesce(new.raw_user_meta_data, '{}'::jsonb) || '{"role": "admin"}'::jsonb;
+    new.raw_user_meta_data = coalesce(new.raw_user_meta_data, '{}'::jsonb) || '{"role": "superadmin"}'::jsonb;
   else
     -- Force everyone else to be a customer, overriding any API injections
     new.raw_user_meta_data = coalesce(new.raw_user_meta_data, '{}'::jsonb) || '{"role": "customer"}'::jsonb;
@@ -435,13 +450,15 @@ as $$
 $$;
 
 -- ==============================================================================
--- 8. INITIAL ADMIN SETUP (Run this manually in SQL Editor to set the admin role)
+-- 8. INITIAL SUPERADMIN SETUP
+-- Trigger only fires on new-user INSERT, so this UPDATE is needed for an account
+-- that already existed before the superadmin role was introduced. Safe to re-run.
 -- ==============================================================================
 
-UPDATE auth.users 
+UPDATE auth.users
 SET raw_user_meta_data = jsonb_set(
-  COALESCE(raw_user_meta_data, '{}'::jsonb), 
-  '{role}', 
-  '"admin"'
+  COALESCE(raw_user_meta_data, '{}'::jsonb),
+  '{role}',
+  '"superadmin"'
 )
 WHERE email = 'efrinowep@gmail.com';
