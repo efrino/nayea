@@ -530,6 +530,20 @@ async function authorizedFetch(url, options = {}) {
     },
   });
 
+  // A plain `vite dev` server (no Vercel functions runtime) doesn't know
+  // about /api/*, and falls back to serving index.html with a 200 status —
+  // which would otherwise look like a successful-but-empty response. Catch
+  // that case explicitly instead of silently returning no data.
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return {
+      data: null,
+      error: new Error(
+        `Endpoint ${url} tidak mengembalikan JSON (dapat ${res.status}). Ini biasanya berarti serverless function tidak berjalan di server saat ini — coba akses lewat deployment Vercel, bukan "vite dev" biasa.`
+      ),
+    };
+  }
+
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     return { data: null, error: new Error(json.error || `Request failed (${res.status})`) };
