@@ -21,7 +21,12 @@ export default async function handler(req, res) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !anonKey || !serviceKey) {
-    return res.status(500).json({ error: 'Server misconfigured: missing Supabase env vars' });
+    const missing = [
+      !supabaseUrl && 'VITE_SUPABASE_URL',
+      !anonKey && 'VITE_SUPABASE_PUBLISHABLE_KEY',
+      !serviceKey && 'SUPABASE_SERVICE_ROLE_KEY',
+    ].filter(Boolean);
+    return res.status(500).json({ error: `Server misconfigured: missing env var(s): ${missing.join(', ')}` });
   }
 
   const authClient = createClient(supabaseUrl, anonKey);
