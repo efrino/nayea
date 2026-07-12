@@ -98,7 +98,13 @@ async function downloadDriveFile(fileId, accessToken, fileName, mimeType, resour
   if (resourceKey) {
     headers['X-Goog-Drive-Resource-Keys'] = `${fileId}/${resourceKey}`;
   }
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers });
+  // supportsAllDrives: without it, Drive API v3 routinely 404s on files that
+  // live in a Shared Drive or a folder shared with (not owned by) the admin,
+  // instead of returning a clearer permission error.
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
+    { headers }
+  );
   if (!res.ok) {
     throw new Error(`Gagal mengunduh "${fileName}" dari Google Drive (HTTP ${res.status}).`);
   }
