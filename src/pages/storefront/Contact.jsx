@@ -18,7 +18,7 @@ export default function Contact() {
             </div>
             <div>
               <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Alamat</h3>
-              <p className="text-sm font-black text-primary">Jakarta, Indonesia</p>
+              <p className="text-sm font-black text-primary">Tangerang, Indonesia</p>
             </div>
           </div>
 
@@ -28,7 +28,7 @@ export default function Contact() {
             </div>
             <div>
               <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">WhatsApp</h3>
-              <p className="text-sm font-black text-primary">+62 812 3456 7890</p>
+              <a href="https://wa.me/6289653411226" target="_blank" rel="noopener noreferrer" className="text-sm font-black text-primary hover:text-accent transition-colors">+62 896 5341 1226</a>
             </div>
           </div>
 
@@ -38,7 +38,7 @@ export default function Contact() {
             </div>
             <div>
               <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Email</h3>
-              <p className="text-sm font-black text-primary">hello@nayea.id</p>
+              <a href="mailto:nayeaofficial@gmail.com" className="text-sm font-black text-primary hover:text-accent transition-colors">nayeaofficial@gmail.com</a>
             </div>
           </div>
 
@@ -48,7 +48,7 @@ export default function Contact() {
             </div>
             <div>
               <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Instagram</h3>
-              <p className="text-sm font-black text-primary">@nayea.id</p>
+              <a href="https://instagram.com/nayea.id" target="_blank" rel="noopener noreferrer" className="text-sm font-black text-primary hover:text-accent transition-colors">@nayea.id</a>
             </div>
           </div>
         </div>

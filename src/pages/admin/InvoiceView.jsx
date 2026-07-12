@@ -71,8 +71,8 @@ export default function InvoiceView() {
         <div className="flex items-start justify-between mb-10 pb-8 border-b-2 border-gray-900">
           <div>
             <h1 className="text-3xl font-black tracking-tight italic">NAYEA<span className="text-primary not-italic">.</span>ID</h1>
-            <p className="text-xs text-gray-500 mt-1">Jakarta, Indonesia</p>
-            <p className="text-xs text-gray-500">hello@nayea.id</p>
+            <p className="text-xs text-gray-500 mt-1">Tangerang, Indonesia</p>
+            <p className="text-xs text-gray-500">nayeaofficial@gmail.com</p>
           </div>
           <div className="text-right">
             <h2 className="text-2xl font-black uppercase tracking-widest text-gray-900">Invoice</h2>

@@ -47,15 +47,15 @@ export default function Footer() {
             <ul className="space-y-4 text-sm font-bold text-secondary">
               <li className="flex items-start space-x-3">
                 <MapPin className="w-4 h-4 text-primary mt-0.5" />
-                <span>Jakarta, Indonesia</span>
+                <span>Tangerang, Indonesia</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone className="w-4 h-4 text-primary" />
-                <span>+62 812 3456 7890</span>
+                <span>+62 896 5341 1226</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-primary" />
-                <span>hello@nayea.id</span>
+                <span>nayeaofficial@gmail.com</span>
               </li>
             </ul>
           </div>

@@ -205,7 +205,7 @@ export default function Checkout() {
   const totalAmount = Math.max(0, getCartTotal() + shippingCost - discountAmount);
 
   const handleWhatsAppRedir = () => {
-    const adminPhone = "+6281234567890"; // Ganti dengan nomor WhatsApp admin Anda
+    const adminPhone = "+6289653411226";
     const orderItemsStr = cartItems.map(item => `- ${item.product.name} (${item.quantity}x)`).join('%0A');
     const msg = `Halo Admin Nayea! Saya ingin konfirmasi pesanan:%0A%0A` +
                 `*Nama:* ${formData.name}%0A` +
