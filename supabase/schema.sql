@@ -29,12 +29,18 @@ create table if not exists products (
 );
 
 -- Phase 11 Upgrades to products
-alter table products 
+alter table products
   add column if not exists images text[] default '{}',
   add column if not exists video_url text,
   add column if not exists colors text[] default '{}',
   add column if not exists material text,
   add column if not exists weight integer default 500; -- in grams
+
+-- Soft-delete flag: products that already have order_items can't be hard
+-- deleted (order_items.product_id is ON DELETE RESTRICT, so order history
+-- stays intact) — deactivating hides them from the storefront instead.
+alter table products
+  add column if not exists is_active boolean not null default true;
 
 -- Table: wishlists
 create table if not exists wishlists (
@@ -170,11 +176,11 @@ alter table messages add column if not exists status text not null default 'sent
 -- Enable RLS
 alter table products enable row level security;
 
--- Policy: Everyone can view products
+-- Policy: Everyone can view active products; staff can also see deactivated ones
 drop policy if exists "Public can view products" on products;
-create policy "Public can view products" 
-on products for select 
-using (true);
+create policy "Public can view products"
+on products for select
+using (is_active = true OR public.is_staff());
 
 -- Policy: Admin can insert, update, or delete products
 drop policy if exists "Admin can insert products" on products;

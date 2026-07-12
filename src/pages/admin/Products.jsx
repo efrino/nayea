@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Filter,
   AlertCircle,
-  Cloud
+  Cloud,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile } from '../../services/api';
 import { pickFilesFromDrive } from '../../lib/googleDrivePicker';
@@ -248,10 +250,18 @@ export default function Products() {
       const { error } = await deleteProduct(id);
       if (!error) {
         fetchProducts();
+      } else if (error.code === '23503') {
+        alert('Produk ini sudah pernah dipesan customer, jadi tidak bisa dihapus permanen (riwayat pesanan harus tetap utuh). Nonaktifkan saja produknya supaya hilang dari toko.');
       } else {
-        alert('Gagal menghapus produk.');
+        alert('Gagal menghapus produk: ' + error.message);
       }
     }
+  };
+
+  const handleToggleActive = async (product) => {
+    const { error } = await updateProduct(product.id, { is_active: !product.is_active });
+    if (error) alert('Gagal mengubah status produk: ' + error.message);
+    else fetchProducts();
   };
 
   const closeModal = () => {
@@ -337,7 +347,7 @@ export default function Products() {
                 </tr>
               ) : (
                 filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr key={product.id} className={`hover:bg-gray-50/50 transition-colors group ${!product.is_active ? 'opacity-50' : ''}`}>
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 duration-300">
@@ -369,22 +379,36 @@ export default function Products() {
                       {product.weight || 500} <span className="text-[10px] uppercase opacity-60">gr</span>
                     </td>
                     <td className="px-8 py-5">
-                      <span className={`px-3 py-1 inline-flex text-[10px] font-bold rounded-lg border
-                        ${!product.is_preorder ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                        {!product.is_preorder ? 'READY STOCK' : 'PRE-ORDER'}
-                      </span>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <span className={`px-3 py-1 inline-flex text-[10px] font-bold rounded-lg border
+                          ${!product.is_preorder ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                          {!product.is_preorder ? 'READY STOCK' : 'PRE-ORDER'}
+                        </span>
+                        {!product.is_active && (
+                          <span className="px-3 py-1 inline-flex text-[10px] font-bold rounded-lg border bg-gray-100 text-gray-500 border-gray-200">
+                            NONAKTIF
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => handleOpenModal(product)} 
+                        <button
+                          onClick={() => handleOpenModal(product)}
                           className="p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
                           title="Edit Produk"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)} 
+                        <button
+                          onClick={() => handleToggleActive(product)}
+                          className={`p-2.5 rounded-xl transition-all shadow-sm active:scale-90 ${product.is_active ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-400 hover:text-white'}`}
+                          title={product.is_active ? 'Nonaktifkan (sembunyikan dari toko)' : 'Aktifkan kembali'}
+                        >
+                          {product.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
                           className="p-2.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-90"
                           title="Hapus Produk"
                         >
