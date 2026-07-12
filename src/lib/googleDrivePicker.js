@@ -6,7 +6,13 @@
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-const SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+// Optional: restrict the picker to a single Drive folder (e.g. a shared
+// "Nayea Assets" folder) instead of the admin's entire Drive.
+const FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID || null;
+// drive.file (not drive.readonly): the app only ever gets access to files
+// the admin explicitly selects through this picker, never blanket read
+// access to their whole Drive.
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 let pickerApiLoaded = false;
 let cachedAccessToken = null;
@@ -98,6 +104,10 @@ export async function pickFilesFromDrive({ multiple = true } = {}) {
   return new Promise((resolve, reject) => {
     const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS_IMAGES_AND_VIDEOS)
       .setIncludeFolders(false);
+
+    if (FOLDER_ID) {
+      view.setParent(FOLDER_ID);
+    }
 
     const pickerBuilder = new window.google.picker.PickerBuilder()
       .addView(view)

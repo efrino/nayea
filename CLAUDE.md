@@ -55,7 +55,8 @@ File `.env`, `.env.local`, `supabase/.env` sudah di-`.gitignore`. Variabel yang 
 - `SUPABASE_SERVICE_ROLE_KEY` — **jangan pernah** prefix `VITE_` (bakal ke-bundle ke client). Dipakai server-side saja di `api/admin-list-users.js` dan `api/admin-set-role.js` untuk fitur Manajemen User (superadmin-only).
 - `RESEND_API_KEY` — server-only, dipakai di `api/send-order-confirmation.js` dan `api/send-shipping-notification.js`. Opsional: kalau kosong, kedua endpoint itu no-op (`sent:false`) alih-alih error, jadi email notifikasi sifatnya opt-in.
 - Kredensial shipping API (RajaOngkir/sejenis) dipakai di `api/shipping-*.js` — cek `.env` lokal, jangan expose ke client bundle.
-- `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` — client-side, dipakai di [src/lib/googleDrivePicker.js](src/lib/googleDrivePicker.js) untuk tombol "Import Drive" di Admin Products/Banners. Public identifier (bukan secret) yang dibatasi lewat authorized origin di Google Cloud Console, aman di-bundle ke client. Opsional: kalau kosong, tombolnya nampilin error "belum dikonfigurasi" alih-alih crash.
+- `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` — client-side, dipakai di [src/lib/googleDrivePicker.js](src/lib/googleDrivePicker.js) untuk tombol "Import Drive" di Admin Products/Banners. Public identifier (bukan secret) yang dibatasi lewat authorized origin di Google Cloud Console, aman di-bundle ke client. Opsional: kalau kosong, tombolnya nampilin error "belum dikonfigurasi" alih-alih crash. Scope yang dipakai `drive.file` (bukan `drive.readonly`) — app cuma dapat akses ke file yang admin pilih lewat picker, bukan seluruh Drive.
+- `VITE_GOOGLE_DRIVE_FOLDER_ID` — opsional, membatasi picker cuma buka satu folder Drive tertentu (ambil dari URL folder-nya) alih-alih seluruh Drive admin.
 
 Kalau menambah env var baru: tambahkan juga ke `.env.example` (tanpa isi asli) supaya orang lain tahu apa yang dibutuhkan.
 
