@@ -35,6 +35,7 @@ import Payments from './pages/admin/Payments';
 import Banners from './pages/admin/Banners';
 import Chat from './pages/admin/Chat';
 import Users from './pages/admin/Users';
+import Vouchers from './pages/admin/Vouchers';
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
               <Route path="banners" element={<Banners />} />
               <Route path="chat" element={<Chat />} />
               <Route path="users" element={<Users />} />
+              <Route path="vouchers" element={<Vouchers />} />
             </Route>
 
             {/* Catch-all 404 Page */}

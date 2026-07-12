@@ -77,6 +77,27 @@ create table if not exists orders (
 alter table orders
   add column if not exists tracking_number text;
 
+-- Phase 18: Kode voucher yang dipakai di order ini (kalau ada)
+alter table orders
+  add column if not exists voucher_code text,
+  add column if not exists discount_amount numeric not null default 0;
+
+-- Table: vouchers (kode promo, dikelola admin/superadmin)
+create table if not exists vouchers (
+  id uuid default uuid_generate_v4() primary key,
+  code text not null unique,
+  type text not null check (type in ('percentage', 'fixed')),
+  value numeric not null check (value > 0),
+  min_purchase numeric not null default 0,
+  max_discount numeric,
+  usage_limit integer,
+  used_count integer not null default 0,
+  starts_at timestamp with time zone,
+  expires_at timestamp with time zone,
+  active boolean not null default true,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Table: order_items
 create table if not exists order_items (
   id uuid default uuid_generate_v4() primary key,
@@ -234,6 +255,18 @@ drop policy if exists "Users or staff can delete reviews" on reviews;
 create policy "Users or staff can delete reviews"
 on reviews for delete
 using (user_id = auth.uid() OR public.is_staff());
+
+-- 1.8 VOUCHERS POLICIES
+-- No public select policy on purpose — codes aren't meant to be browsable
+-- via the REST API. Checkout validates a code through validate_voucher()
+-- (security definer RPC below) instead of querying this table directly.
+alter table vouchers enable row level security;
+
+drop policy if exists "Staff can manage vouchers" on vouchers;
+create policy "Staff can manage vouchers"
+on vouchers for all
+using (public.is_staff())
+with check (public.is_staff());
 
 -- 2. ORDERS & ORDER_ITEMS TABLE POLICIES
 alter table orders enable row level security;
@@ -537,6 +570,92 @@ as $$
   left join auth.users u on r.user_id = u.id
   where r.product_id = p_product_id
   order by r.created_at desc;
+$$;
+
+-- Validate a voucher code against a cart subtotal WITHOUT requiring the
+-- caller to have SELECT on public.vouchers (codes aren't publicly browsable).
+-- Called from Checkout when the customer clicks "Apply".
+create or replace function public.validate_voucher(p_code text, p_subtotal numeric)
+returns table (
+  valid boolean,
+  message text,
+  discount_amount numeric,
+  voucher_id uuid
+)
+language plpgsql
+security definer
+as $$
+declare
+  v record;
+  v_discount numeric;
+begin
+  select * into v from public.vouchers where upper(code) = upper(p_code) and active = true;
+
+  if not found then
+    return query select false, 'Kode voucher tidak ditemukan atau sudah tidak aktif.'::text, 0::numeric, null::uuid;
+    return;
+  end if;
+
+  if v.starts_at is not null and now() < v.starts_at then
+    return query select false, 'Kode voucher belum berlaku.'::text, 0::numeric, null::uuid;
+    return;
+  end if;
+
+  if v.expires_at is not null and now() > v.expires_at then
+    return query select false, 'Kode voucher sudah kedaluwarsa.'::text, 0::numeric, null::uuid;
+    return;
+  end if;
+
+  if v.usage_limit is not null and v.used_count >= v.usage_limit then
+    return query select false, 'Kuota voucher sudah habis.'::text, 0::numeric, null::uuid;
+    return;
+  end if;
+
+  if p_subtotal < v.min_purchase then
+    return query select false, ('Minimal belanja Rp ' || to_char(v.min_purchase, 'FM999G999G999') || ' untuk pakai voucher ini.')::text, 0::numeric, null::uuid;
+    return;
+  end if;
+
+  if v.type = 'percentage' then
+    v_discount := p_subtotal * v.value / 100;
+    if v.max_discount is not null and v_discount > v.max_discount then
+      v_discount := v.max_discount;
+    end if;
+  else
+    v_discount := v.value;
+  end if;
+
+  if v_discount > p_subtotal then
+    v_discount := p_subtotal;
+  end if;
+
+  return query select true, 'Voucher berhasil diterapkan.'::text, v_discount, v.id;
+end;
+$$;
+
+-- Atomically re-validate + increment used_count. Called right after an order
+-- is created with a voucher applied (see createOrder in src/services/api.js).
+-- Re-checks validity at write time to close the race window between
+-- "customer clicked Apply" and "order actually submitted".
+create or replace function public.consume_voucher(p_code text)
+returns boolean
+language plpgsql
+security definer
+as $$
+declare
+  updated_rows integer;
+begin
+  update public.vouchers
+  set used_count = used_count + 1
+  where upper(code) = upper(p_code)
+    and active = true
+    and (usage_limit is null or used_count < usage_limit)
+    and (expires_at is null or now() <= expires_at)
+    and (starts_at is null or now() >= starts_at);
+
+  get diagnostics updated_rows = row_count;
+  return updated_rows > 0;
+end;
 $$;
 
 -- ==============================================================================

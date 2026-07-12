@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Truck, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Truck, MapPin, Search, Tag, X, CheckCircle } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder } from '../../services/api';
+import { createOrder, validateVoucher } from '../../services/api';
 import { searchDestination, getShippingRates } from '../../services/shipping';
 
 export default function Checkout() {
@@ -43,6 +43,12 @@ export default function Checkout() {
 
   // Honeypot
   const [honey, setHoney] = useState('');
+
+  // Voucher
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState(null); // { code, discount_amount }
+  const [voucherError, setVoucherError] = useState('');
+  const [voucherLoading, setVoucherLoading] = useState(false);
 
   /* ─── Close dest dropdown on outside click ─── */
   useEffect(() => {
@@ -100,6 +106,32 @@ export default function Checkout() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    setVoucherLoading(true);
+    setVoucherError('');
+    const { data, error } = await validateVoucher(voucherCode.trim(), getCartTotal());
+    setVoucherLoading(false);
+
+    if (error || !data) {
+      setVoucherError('Gagal memeriksa voucher. Coba lagi.');
+      return;
+    }
+    if (!data.valid) {
+      setVoucherError(data.message);
+      setAppliedVoucher(null);
+      return;
+    }
+    setAppliedVoucher({ code: voucherCode.trim().toUpperCase(), discount_amount: data.discount_amount });
+    setVoucherError('');
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherCode('');
+    setVoucherError('');
+  };
+
   const handleSelectDest = (dest) => {
     const label = [dest.subdistrict_name, dest.district_name, dest.city_name, dest.province]
       .filter(Boolean).join(', ');
@@ -128,11 +160,12 @@ export default function Checkout() {
     try {
       const courierStr  = `${selectedService.courier} ${selectedService.service}`;
       const fullAddress = `${formData.address}, ${selectedDest.label}`;
+      const discount = appliedVoucher?.discount_amount || 0;
 
       const orderData = {
         customer_name:    formData.name,
         customer_phone:   formData.phone,
-        total_amount:     getCartTotal() + selectedService.price,
+        total_amount:     Math.max(0, getCartTotal() + selectedService.price - discount),
         status:           'pending',
         user_id:          user.id,
         shipping_address: fullAddress,
@@ -140,6 +173,8 @@ export default function Checkout() {
         shipping_cost:    selectedService.price,
         payment_method:   'bank_transfer',
         payment_status:   'unpaid',
+        voucher_code:     appliedVoucher?.code || null,
+        discount_amount:  discount,
       };
 
       const { error } = await createOrder(orderData, cartItems);
@@ -161,7 +196,8 @@ export default function Checkout() {
     : shippingRates.filter(r => r.courier === activeCourier);
 
   const shippingCost = selectedService?.price ?? 0;
-  const totalAmount = getCartTotal() + shippingCost;
+  const discountAmount = appliedVoucher?.discount_amount || 0;
+  const totalAmount = Math.max(0, getCartTotal() + shippingCost - discountAmount);
 
   const handleWhatsAppRedir = () => {
     const adminPhone = "+6281234567890"; // Ganti dengan nomor WhatsApp admin Anda
@@ -371,6 +407,48 @@ export default function Checkout() {
                 )}
               </div>
 
+              {/* ── 3.5 Voucher Code ── */}
+              <div>
+                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5 flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-primary" /> Kode Voucher
+                </h2>
+                {appliedVoucher ? (
+                  <div className="flex items-center justify-between p-4 rounded-[1.2rem] bg-emerald-50 border border-emerald-100">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span className="text-sm font-black text-emerald-700 tracking-widest">{appliedVoucher.code}</span>
+                      <span className="text-xs font-medium text-emerald-600">
+                        (−Rp {appliedVoucher.discount_amount.toLocaleString('id-ID')})
+                      </span>
+                    </div>
+                    <button type="button" onClick={handleRemoveVoucher} className="p-1.5 text-emerald-400 hover:text-rose-500 transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={voucherCode}
+                      onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(''); }}
+                      placeholder="Masukkan kode voucher"
+                      className="flex-1 rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-black tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyVoucher}
+                      disabled={voucherLoading || !voucherCode.trim()}
+                      className="px-6 py-3 rounded-[1.2rem] bg-gray-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-black active:scale-95 transition-all disabled:opacity-50 flex-shrink-0"
+                    >
+                      {voucherLoading ? '...' : 'Pakai'}
+                    </button>
+                  </div>
+                )}
+                {voucherError && (
+                  <p className="mt-2 text-[11px] font-bold text-rose-500">{voucherError}</p>
+                )}
+              </div>
+
               {/* ── 4. Payment Summary ── */}
               <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
                 <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-4">Ringkasan Pembayaran</h3>
@@ -385,11 +463,17 @@ export default function Checkout() {
                       {selectedService ? `Rp ${shippingCost.toLocaleString('id-ID')}` : '—'}
                     </span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Diskon Voucher ({appliedVoucher.code})</span>
+                      <span className="font-black">−Rp {discountAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-black text-gray-900 uppercase italic">Total</span>
                   <span className="text-xl font-black text-primary italic">
-                    Rp {(getCartTotal() + shippingCost).toLocaleString('id-ID')}
+                    Rp {totalAmount.toLocaleString('id-ID')}
                   </span>
                 </div>
               </div>

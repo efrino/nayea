@@ -12,7 +12,8 @@ import {
   X,
   Bell,
   ChevronRight,
-  Users as UsersIcon
+  Users as UsersIcon,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -90,6 +91,7 @@ export default function AdminLayout() {
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
     { name: 'Payments', path: '/admin/payments', icon: CreditCard },
     { name: 'Banners', path: '/admin/banners', icon: ImageIcon },
+    { name: 'Vouchers', path: '/admin/vouchers', icon: Tag },
     { name: 'Chat Inbox', path: '/admin/chat', icon: MessageSquare, badge: unreadChatCount },
     ...(isSuper ? [{ name: 'User Management', path: '/admin/users', icon: UsersIcon }] : []),
   ];

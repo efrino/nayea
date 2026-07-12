@@ -369,6 +369,13 @@ export async function createOrder(orderData, cartItems) {
       )
     );
 
+    // 5. Tandai voucher sudah dipakai (re-validasi atomic di DB — kalau
+    // ternyata kuota sudah habis tepat di saat ini, order tetap jalan,
+    // cuma voucher-nya tidak ke-consume; ini best-effort, bukan blocking)
+    if (orderData.voucher_code) {
+      await supabase.rpc("consume_voucher", { p_code: orderData.voucher_code });
+    }
+
     return { data: order, error: null };
   } catch (error) {
     console.error("Error creating order:", error);
@@ -638,5 +645,56 @@ export async function updateReview(id, reviewData) {
 
 export async function deleteReview(id) {
   const { error } = await supabase.from("reviews").delete().eq("id", id);
+  return { error };
+}
+
+// ==========================================
+// VOUCHER SERVICES
+// ==========================================
+
+/**
+ * Checks a voucher code against the current cart subtotal (RPC — codes
+ * aren't readable directly by the client, see schema.sql for why).
+ */
+export async function validateVoucher(code, subtotal) {
+  const { data, error } = await supabase.rpc("validate_voucher", {
+    p_code: code,
+    p_subtotal: subtotal,
+  });
+  if (error) return { data: null, error };
+  return { data: data?.[0] || null, error: null };
+}
+
+export async function getVouchers() {
+  const { data, error } = await supabase
+    .from("vouchers")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return { data, error };
+}
+
+export async function createVoucher(voucherData) {
+  const { data, error } = await supabase
+    .from("vouchers")
+    .insert([{ ...voucherData, code: voucherData.code?.toUpperCase() }])
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function updateVoucher(id, voucherData) {
+  const payload = { ...voucherData };
+  if (payload.code) payload.code = payload.code.toUpperCase();
+  const { data, error } = await supabase
+    .from("vouchers")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function deleteVoucher(id) {
+  const { error } = await supabase.from("vouchers").delete().eq("id", id);
   return { error };
 }
