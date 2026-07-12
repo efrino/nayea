@@ -11,10 +11,13 @@ const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 // Optional: restrict the picker to a single Drive folder (e.g. a shared
 // "Nayea Assets" folder) instead of the admin's entire Drive.
 const FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID || null;
-// drive.file (not drive.readonly): the app only ever gets access to files
-// the admin explicitly selects through this picker, never blanket read
-// access to their whole Drive.
-const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+// drive.readonly (not drive.file): drive.file's per-file grant only works
+// reliably for files the app itself created, or via full Drive UI
+// integration — for pre-existing files in a folder *shared with* the admin
+// (not owned by them), it 404s unpredictably even after the file is
+// selected through the picker. drive.readonly reads anything the admin can
+// already view in Drive, which is what "shared with me" actually needs.
+const SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 
 let pickerApiLoaded = false;
 let cachedAccessToken = null;
