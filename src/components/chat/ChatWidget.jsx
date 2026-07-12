@@ -302,7 +302,7 @@ export default function ChatWidget() {
       )}
 
       {isOpen && (
-        <div className="fixed bottom-0 right-0 sm:bottom-8 sm:right-8 w-full sm:w-[400px] h-[100dvh] sm:h-[650px] sm:max-h-[85vh] bg-white sm:rounded-[2.5rem] shadow-2xl flex flex-col z-[100] overflow-hidden animate-in slide-in-from-bottom-5 duration-300 border border-gray-100">
+        <div className="fixed bottom-0 right-0 sm:bottom-8 sm:right-8 w-full sm:w-[400px] h-[100dvh] sm:h-[650px] sm:max-h-[85vh] bg-white sm:rounded-[2.5rem] shadow-2xl flex flex-col z-[100] overflow-hidden animate-in slide-in-from-bottom-5 duration-300 border border-oat">
 
           {/* Header */}
           <div className="bg-[#075E54] px-6 py-5 flex justify-between items-center text-white relative shadow-lg">
@@ -330,12 +330,12 @@ export default function ChatWidget() {
           {!user ? (
             /* Unauthenticated View */
             <div className="flex-1 p-10 bg-[#ECE5DD] flex flex-col items-center justify-center space-y-6 text-center">
-              <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center shadow-xl text-gray-300 border border-gray-50">
+              <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center shadow-xl text-secondary-light border border-cream">
                 <Lock className="w-10 h-10" />
               </div>
               <div className="space-y-2">
-                <h4 className="font-black font-heading text-2xl text-gray-900 tracking-tight italic uppercase">Chat Terkunci</h4>
-                <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-[240px] mx-auto">Silakan masuk ke akun Anda untuk memulai obrolan personal.</p>
+                <h4 className="font-black font-heading text-2xl text-primary tracking-tight italic uppercase">Chat Terkunci</h4>
+                <p className="text-sm text-secondary font-medium leading-relaxed max-w-[240px] mx-auto">Silakan masuk ke akun Anda untuk memulai obrolan personal.</p>
               </div>
               <Link
                 to="/login"
@@ -353,12 +353,12 @@ export default function ChatWidget() {
                 {chatLog.map((chat) => (
                   <div key={chat.id} className={`flex ${chat.sender === 'customer' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`relative max-w-[85%] px-4 py-3 shadow-md ${chat.sender === 'customer'
-                      ? 'bg-[#E2FFC7] text-gray-900 rounded-[1.2rem] rounded-tr-none'
-                      : 'bg-white text-gray-900 rounded-[1.2rem] rounded-tl-none'
+                      ? 'bg-[#E2FFC7] text-primary rounded-[1.2rem] rounded-tr-none'
+                      : 'bg-white text-primary rounded-[1.2rem] rounded-tl-none'
                       }`}>
-                      <p className="text-sm leading-relaxed font-medium text-gray-800 whitespace-pre-wrap">{chat.text}</p>
+                      <p className="text-sm leading-relaxed font-medium text-primary whitespace-pre-wrap">{chat.text}</p>
                       <div className="flex items-center justify-end gap-1 mt-1 opacity-60">
-                        <span className="text-[9px] font-bold text-gray-500 italic">
+                        <span className="text-[9px] font-bold text-secondary italic">
                           {formatTime(chat.created_at)}
                         </span>
                         {chat.sender === 'customer' && <MessageStatus status={resolveStatus(chat)} />}
@@ -370,8 +370,8 @@ export default function ChatWidget() {
               </div>
 
               {/* Quick Reply Chips */}
-              <div className="px-4 py-3 bg-white/80 backdrop-blur-md border-t border-gray-50">
-                <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] italic">
+              <div className="px-4 py-3 bg-white/80 backdrop-blur-md border-t border-cream">
+                <div className="flex items-center gap-2 mb-3 text-[10px] text-secondary font-black uppercase tracking-[0.2em] italic">
                   <Package className="w-4 h-4 text-primary" />
                   Quick Reply
                 </div>
@@ -381,7 +381,7 @@ export default function ChatWidget() {
                       key={idx}
                       type="button"
                       onClick={() => setMessage(reply)}
-                      className="flex-shrink-0 text-[11px] px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-100 text-gray-600 font-bold hover:border-primary hover:text-primary hover:bg-primary/5 transition-all whitespace-nowrap shadow-sm active:scale-95"
+                      className="flex-shrink-0 text-[11px] px-4 py-2.5 rounded-2xl bg-cream border border-oat text-secondary font-bold hover:border-primary hover:text-primary hover:bg-primary/5 transition-all whitespace-nowrap shadow-sm active:scale-95"
                     >
                       {reply}
                     </button>
@@ -390,14 +390,14 @@ export default function ChatWidget() {
               </div>
 
               {/* Input Area */}
-              <div className="p-4 bg-white border-t border-gray-50 flex items-center">
+              <div className="p-4 bg-white border-t border-cream flex items-center">
                 <form onSubmit={handleSend} className="flex-1 flex gap-3">
                   <input
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Tulis pesan..."
-                    className="flex-1 bg-gray-50 border-transparent rounded-2xl px-5 py-3.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder-gray-400"
+                    className="flex-1 bg-cream border-transparent rounded-2xl px-5 py-3.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder-secondary"
                   />
                   <button
                     type="submit"

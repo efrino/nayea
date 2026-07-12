@@ -220,11 +220,11 @@ export default function Checkout() {
   /* ─── Success Screen ─── */
   if (isSuccess) {
     return (
-      <div className="bg-gray-50 min-h-screen py-24 flex items-center justify-center">
-        <div className="bg-white p-12 rounded-[3rem] shadow-sm text-center max-w-lg w-full mx-4 border border-gray-100">
+      <div className="bg-cream min-h-screen py-24 flex items-center justify-center">
+        <div className="bg-white p-12 rounded-[3rem] shadow-sm text-center max-w-lg w-full mx-4 border border-oat">
           <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-          <h2 className="text-3xl font-black font-heading text-gray-900 italic uppercase mb-2">Pemesanan Dicatat!</h2>
-          <p className="text-gray-500 font-medium mb-8">Terima kasih! Pesanan Anda telah tersimpan. Silakan klik tombol di bawah untuk konfirmasi via WhatsApp agar segera diproses.</p>
+          <h2 className="text-3xl font-black font-heading text-primary italic uppercase mb-2">Pemesanan Dicatat!</h2>
+          <p className="text-secondary font-medium mb-8">Terima kasih! Pesanan Anda telah tersimpan. Silakan klik tombol di bawah untuk konfirmasi via WhatsApp agar segera diproses.</p>
 
           <div className="space-y-4">
             <button
@@ -233,7 +233,7 @@ export default function Checkout() {
             >
               Konfirmasi via WhatsApp
             </button>
-            <Link to="/" className="block text-gray-400 hover:text-primary text-[10px] font-black uppercase tracking-widest transition-colors">
+            <Link to="/" className="block text-secondary hover:text-primary text-[10px] font-black uppercase tracking-widest transition-colors">
               Kembali ke Beranda
             </Link>
           </div>
@@ -244,62 +244,62 @@ export default function Checkout() {
 
   /* ─── Main Checkout Form ─── */
   return (
-    <div className="bg-gray-50 min-h-screen py-12 sm:py-20">
+    <div className="bg-cream min-h-screen py-12 sm:py-20">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Breadcrumb */}
         <nav className="flex mb-8">
-          <Link to="/cart" className="group flex items-center text-[10px] font-black text-gray-400 hover:text-primary transition-all uppercase tracking-widest italic">
-            <div className="p-2 bg-gray-50 rounded-full mr-3 group-hover:bg-primary/10 transition-all">
+          <Link to="/cart" className="group flex items-center text-[10px] font-black text-secondary hover:text-primary transition-all uppercase tracking-widest italic">
+            <div className="p-2 bg-cream rounded-full mr-3 group-hover:bg-primary/10 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </div>
             Kembali ke Keranjang
           </Link>
         </nav>
         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Final Step</span>
-        <h1 className="text-4xl sm:text-5xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-10">Checkout</h1>
+        <h1 className="text-4xl sm:text-5xl font-black font-heading text-primary tracking-tighter italic uppercase mb-10">Checkout</h1>
 
-        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 sm:p-10">
+        <div className="bg-white rounded-[2.5rem] border border-oat shadow-sm p-6 sm:p-10">
           <form onSubmit={handleSubmit}>
             <div className="space-y-10">
 
               {/* ── 1. Contact Info ── */}
               <div>
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5">Informasi Kontak</h2>
+                <h2 className="text-[11px] font-black text-primary uppercase tracking-widest italic mb-5">Informasi Kontak</h2>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label htmlFor="name" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nama Lengkap</label>
+                    <label htmlFor="name" className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">Nama Lengkap</label>
                     <input type="text" id="name" name="name" required value={formData.name} onChange={handleInputChange}
-                      className="w-full rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                      className="w-full rounded-[1.2rem] border border-oat py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                   <div className="sm:col-span-2">
-                    <label htmlFor="phone" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nomor WhatsApp</label>
+                    <label htmlFor="phone" className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">Nomor WhatsApp</label>
                     <input type="tel" id="phone" name="phone" required value={formData.phone} onChange={handleInputChange}
-                      className="w-full rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                      className="w-full rounded-[1.2rem] border border-oat py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                 </div>
               </div>
 
               {/* ── 2. Shipping Address ── */}
               <div>
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5 flex items-center gap-2">
+                <h2 className="text-[11px] font-black text-primary uppercase tracking-widest italic mb-5 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-primary" /> Alamat Pengiriman
                 </h2>
 
                 {/* Destination Search */}
                 <div className="mb-4 relative" ref={searchRef}>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">
                     Cari Kecamatan / Kota Tujuan
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary pointer-events-none" />
                     <input
                       type="text"
                       placeholder="Cth: Pasar Kemis, Cikupa, Kebayoran Baru..."
                       value={destSearch}
                       onChange={e => { setDestSearch(e.target.value); setSelectedDest(null); setShippingRates([]); setSelectedService(null); }}
                       onFocus={() => destResults.length > 0 && setShowResults(true)}
-                      className="w-full pl-11 pr-10 py-3 border border-gray-200 rounded-[1.2rem] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full pl-11 pr-10 py-3 border border-oat rounded-[1.2rem] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                     {isSearching && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -310,16 +310,16 @@ export default function Checkout() {
 
                   {/* Dropdown */}
                   {showResults && destResults.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-[1.5rem] shadow-xl z-40 max-h-60 overflow-y-auto p-2">
+                    <div className="absolute left-0 right-0 mt-2 bg-white border border-oat rounded-[1.5rem] shadow-xl z-40 max-h-60 overflow-y-auto p-2">
                       {destResults.map((dest, i) => (
                         <button
                           key={dest.id ?? i}
                           type="button"
                           onMouseDown={() => handleSelectDest(dest)}
-                          className="w-full text-left px-4 py-3 text-sm rounded-[1rem] hover:bg-gray-50 transition-colors"
+                          className="w-full text-left px-4 py-3 text-sm rounded-[1rem] hover:bg-cream transition-colors"
                         >
-                          <span className="font-black text-gray-900">{dest.subdistrict_name}</span>
-                          <span className="text-gray-500 ml-2 text-xs">
+                          <span className="font-black text-primary">{dest.subdistrict_name}</span>
+                          <span className="text-secondary ml-2 text-xs">
                             {[dest.district_name, dest.city_name, dest.province].filter(Boolean).join(', ')}
                           </span>
                         </button>
@@ -334,30 +334,30 @@ export default function Checkout() {
 
                 {/* Street Address */}
                 <div>
-                  <label htmlFor="address" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                  <label htmlFor="address" className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">
                     Alamat Lengkap (Jalan, No. Rumah, RT/RW, Patokan)
                   </label>
                   <textarea
                     id="address" name="address" rows={3} required
                     value={formData.address} onChange={handleInputChange}
                     placeholder="Cth: Jl. Melati No. 5, RT 02/RW 04, dekat Indomaret"
-                    className="w-full rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder-gray-400"
+                    className="w-full rounded-[1.2rem] border border-oat py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder-secondary"
                   />
                 </div>
               </div>
 
               {/* ── 3. Shipping Rate Selection ── */}
               <div>
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5 flex items-center gap-2">
+                <h2 className="text-[11px] font-black text-primary uppercase tracking-widest italic mb-5 flex items-center gap-2">
                   <Truck className="w-4 h-4 text-primary" /> Pilih Layanan Pengiriman
                 </h2>
 
                 {!selectedDest ? (
-                  <p className="text-sm text-gray-400 italic font-medium">Pilih kecamatan tujuan terlebih dahulu untuk melihat tarif pengiriman.</p>
+                  <p className="text-sm text-secondary italic font-medium">Pilih kecamatan tujuan terlebih dahulu untuk melihat tarif pengiriman.</p>
                 ) : loadingShipping ? (
-                  <div className="flex items-center gap-3 py-6 justify-center bg-gray-50 rounded-[1.5rem] border border-gray-100">
+                  <div className="flex items-center gap-3 py-6 justify-center bg-cream rounded-[1.5rem] border border-oat">
                     <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                    <span className="text-sm text-gray-500 font-medium">Mencari tarif dari Pasar Kemis, Tangerang...</span>
+                    <span className="text-sm text-secondary font-medium">Mencari tarif dari Pasar Kemis, Tangerang...</span>
                   </div>
                 ) : shippingError ? (
                   <p className="text-sm text-rose-500 font-medium text-center py-4">{shippingError}</p>
@@ -372,7 +372,7 @@ export default function Checkout() {
                           className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all
                             ${activeCourier === name
                               ? 'bg-primary text-white border-primary'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-primary hover:text-primary'}`}
+                              : 'bg-white text-secondary border-oat hover:border-primary hover:text-primary'}`}
                         >
                           {name}
                         </button>
@@ -386,24 +386,24 @@ export default function Checkout() {
                           className={`flex items-center p-4 border rounded-[1.2rem] cursor-pointer transition-all
                             ${selectedService && selectedService.courier === rate.courier && selectedService.service === rate.service
                               ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                              : 'border-gray-200 bg-white hover:border-gray-400'}`}
+                              : 'border-oat bg-white hover:border-secondary'}`}
                         >
                           <input
                             type="radio" name="shipping_service"
-                            className="h-4 w-4 text-primary border-gray-300 shrink-0"
+                            className="h-4 w-4 text-primary border-secondary-light shrink-0"
                             checked={!!(selectedService && selectedService.courier === rate.courier && selectedService.service === rate.service)}
                             onChange={() => setSelectedService(rate)}
                           />
                           <div className="ml-3 flex-1 min-w-0">
                             <div className="flex justify-between items-baseline gap-2">
-                              <span className="text-sm font-black text-gray-900 truncate">
-                                {rate.courier} <span className="font-medium text-gray-500">{rate.service}</span>
+                              <span className="text-sm font-black text-primary truncate">
+                                {rate.courier} <span className="font-medium text-secondary">{rate.service}</span>
                               </span>
-                              <span className="text-sm font-black text-gray-900 shrink-0">
+                              <span className="text-sm font-black text-primary shrink-0">
                                 Rp {rate.price.toLocaleString('id-ID')}
                               </span>
                             </div>
-                            <span className="text-xs text-gray-400 font-medium">{rate.description} · Est. {rate.etd}</span>
+                            <span className="text-xs text-secondary font-medium">{rate.description} · Est. {rate.etd}</span>
                           </div>
                         </label>
                       ))}
@@ -414,7 +414,7 @@ export default function Checkout() {
 
               {/* ── 3.5 Voucher Code ── */}
               <div>
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-5 flex items-center gap-2">
+                <h2 className="text-[11px] font-black text-primary uppercase tracking-widest italic mb-5 flex items-center gap-2">
                   <Tag className="w-4 h-4 text-primary" /> Kode Voucher
                 </h2>
                 {appliedVoucher ? (
@@ -437,13 +437,13 @@ export default function Checkout() {
                       value={voucherCode}
                       onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(''); }}
                       placeholder="Masukkan kode voucher"
-                      className="flex-1 rounded-[1.2rem] border border-gray-200 py-3 px-4 text-sm font-black tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="flex-1 rounded-[1.2rem] border border-oat py-3 px-4 text-sm font-black tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                     <button
                       type="button"
                       onClick={handleApplyVoucher}
                       disabled={voucherLoading || !voucherCode.trim()}
-                      className="px-6 py-3 rounded-[1.2rem] bg-gray-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-black active:scale-95 transition-all disabled:opacity-50 flex-shrink-0"
+                      className="px-6 py-3 rounded-[1.2rem] bg-primary text-white text-[11px] font-black uppercase tracking-widest hover:bg-black active:scale-95 transition-all disabled:opacity-50 flex-shrink-0"
                     >
                       {voucherLoading ? '...' : 'Pakai'}
                     </button>
@@ -455,16 +455,16 @@ export default function Checkout() {
               </div>
 
               {/* ── 4. Payment Summary ── */}
-              <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
-                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-4">Ringkasan Pembayaran</h3>
-                <div className="space-y-2.5 mb-4 pb-4 border-b border-gray-200 text-sm font-medium">
-                  <div className="flex justify-between text-gray-500">
+              <div className="bg-cream p-6 rounded-[2rem] border border-oat">
+                <h3 className="text-[11px] font-black text-primary uppercase tracking-widest italic mb-4">Ringkasan Pembayaran</h3>
+                <div className="space-y-2.5 mb-4 pb-4 border-b border-oat text-sm font-medium">
+                  <div className="flex justify-between text-secondary">
                     <span>Subtotal Produk ({cartItems.length} item)</span>
-                    <span className="font-black text-gray-900">Rp {getCartTotal().toLocaleString('id-ID')}</span>
+                    <span className="font-black text-primary">Rp {getCartTotal().toLocaleString('id-ID')}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500">
+                  <div className="flex justify-between text-secondary">
                     <span>Ongkos Kirim {selectedService ? `(${selectedService.courier} ${selectedService.service})` : ''}</span>
-                    <span className="font-black text-gray-900">
+                    <span className="font-black text-primary">
                       {selectedService ? `Rp ${shippingCost.toLocaleString('id-ID')}` : '—'}
                     </span>
                   </div>
@@ -476,7 +476,7 @@ export default function Checkout() {
                   )}
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-black text-gray-900 uppercase italic">Total</span>
+                  <span className="text-lg font-black text-primary uppercase italic">Total</span>
                   <span className="text-xl font-black text-primary italic">
                     Rp {totalAmount.toLocaleString('id-ID')}
                   </span>
@@ -485,18 +485,18 @@ export default function Checkout() {
 
               {/* ── 5. Payment Method ── */}
               <div>
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest italic mb-4">Metode Pembayaran</h2>
+                <h2 className="text-[11px] font-black text-primary uppercase tracking-widest italic mb-4">Metode Pembayaran</h2>
                 <div className="space-y-3">
                   <div className="p-5 border border-primary rounded-[1.5rem] bg-primary/5 ring-1 ring-primary space-y-4">
                     <label className="flex items-center cursor-pointer">
-                      <input type="radio" name="payment_method" defaultChecked className="h-4 w-4 text-primary border-gray-300" />
-                      <span className="ml-3 text-[11px] font-black text-gray-900 uppercase tracking-widest">Transfer Bank Manual</span>
+                      <input type="radio" name="payment_method" defaultChecked className="h-4 w-4 text-primary border-secondary-light" />
+                      <span className="ml-3 text-[11px] font-black text-primary uppercase tracking-widest">Transfer Bank Manual</span>
                     </label>
-                    <div className="pl-7 space-y-3 text-sm text-gray-500 font-medium border-t border-primary/10 pt-4">
+                    <div className="pl-7 space-y-3 text-sm text-secondary font-medium border-t border-primary/10 pt-4">
                       <div className="flex justify-between items-center bg-white p-4 rounded-[1.2rem] border border-primary/20">
                         <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">BCA</p>
-                          <p className="font-mono font-black text-gray-900">1234567890</p>
+                          <p className="text-[9px] font-black text-secondary uppercase tracking-widest">BCA</p>
+                          <p className="font-mono font-black text-primary">1234567890</p>
                           <p className="text-[10px]">a/n NAYEA OFFICIAL</p>
                         </div>
                         <button type="button" onClick={() => navigator.clipboard.writeText('1234567890')} className="text-[10px] text-primary font-black uppercase tracking-widest">Salin</button>
@@ -504,9 +504,9 @@ export default function Checkout() {
                       <p className="text-[11px] leading-relaxed italic">* Harap simpan bukti transfer untuk dikonfirmasikan via WhatsApp setelah klik tombol "Selesaikan Pesanan".</p>
                     </div>
                   </div>
-                  <label className="flex items-center p-4 border border-gray-200 rounded-[1.5rem] opacity-50 cursor-not-allowed">
-                    <input type="radio" name="payment_method" disabled className="h-4 w-4 text-gray-400 border-gray-300" />
-                    <span className="ml-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">QRIS (Segera Hadir)</span>
+                  <label className="flex items-center p-4 border border-oat rounded-[1.5rem] opacity-50 cursor-not-allowed">
+                    <input type="radio" name="payment_method" disabled className="h-4 w-4 text-secondary border-secondary-light" />
+                    <span className="ml-3 text-[11px] font-black text-secondary uppercase tracking-widest">QRIS (Segera Hadir)</span>
                   </label>
                 </div>
               </div>
@@ -533,7 +533,7 @@ export default function Checkout() {
                   {isSubmitting ? 'Memproses Pesanan...' : 'Selesaikan Pesanan'}
                 </button>
                 {!selectedService && (
-                  <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-3">Pilih layanan pengiriman untuk melanjutkan.</p>
+                  <p className="text-center text-[10px] font-black text-secondary uppercase tracking-widest mt-3">Pilih layanan pengiriman untuk melanjutkan.</p>
                 )}
               </div>
 

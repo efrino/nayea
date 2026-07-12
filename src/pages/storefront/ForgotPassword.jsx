@@ -27,7 +27,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-cream flex flex-col justify-center py-12 px-6 lg:px-8 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
 
@@ -40,16 +40,16 @@ export default function ForgotPassword() {
             <span className="mt-4 text-[10px] font-black text-primary uppercase tracking-[0.4em] italic">Nayea.id</span>
           </Link>
         </div>
-        <h2 className="text-center text-4xl font-black font-heading text-gray-900 tracking-tighter italic uppercase">
+        <h2 className="text-center text-4xl font-black font-heading text-primary tracking-tighter italic uppercase">
           {sent ? 'Cek Email Anda' : 'Lupa Password?'}
         </h2>
-        <p className="mt-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest italic">
+        <p className="mt-4 text-center text-xs font-black text-secondary uppercase tracking-widest italic">
           {sent ? 'Klik link reset password yang kami kirim' : 'Kami akan kirimkan link reset password ke email Anda'}
         </p>
       </div>
 
       <div className="mt-12 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-gray-100 sm:px-12">
+        <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-oat sm:px-12">
           {sent ? (
             <div className="text-center space-y-6">
               <div className="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl text-left">
@@ -60,7 +60,7 @@ export default function ForgotPassword() {
               <button
                 type="button"
                 onClick={() => setSent(false)}
-                className="w-full text-center text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-primary transition-colors"
+                className="w-full text-center text-[10px] font-black text-secondary uppercase tracking-widest hover:text-primary transition-colors"
               >
                 Salah email? Kirim ulang
               </button>
@@ -73,14 +73,14 @@ export default function ForgotPassword() {
                 </div>
               )}
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 italic">Email Address</label>
+                <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3 italic">Email Address</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="block w-full px-6 py-4 bg-gray-50 border-2 border-gray-50 rounded-[1.5rem] text-sm font-black italic text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                  className="block w-full px-6 py-4 bg-cream border-2 border-cream rounded-[1.5rem] text-sm font-black italic text-primary placeholder-secondary-light focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                 />
               </div>
               <button
@@ -93,8 +93,8 @@ export default function ForgotPassword() {
             </form>
           )}
 
-          <div className="mt-12 pt-8 border-t border-gray-50">
-            <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
+          <div className="mt-12 pt-8 border-t border-cream">
+            <p className="text-center text-[10px] font-black text-secondary uppercase tracking-widest italic">
               Sudah ingat password?{' '}
               <Link to="/login" className="text-primary hover:text-primary-dark ml-2 hover:underline">
                 Kembali ke Login

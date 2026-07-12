@@ -29,11 +29,11 @@ export default function Faq() {
   const [openIdx, setOpenIdx] = useState(0);
 
   return (
-    <div className="bg-white min-h-screen py-16 sm:py-24">
+    <div className="bg-cream min-h-screen py-16 sm:py-24">
       <SEO title="FAQ" description="Pertanyaan yang sering ditanyakan seputar pembayaran, pengiriman, produk pre-order, dan penukaran di Nayea.id." />
       <div className="max-w-3xl mx-auto px-6 sm:px-8">
         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Support</span>
-        <h1 className="text-5xl sm:text-6xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-12">
+        <h1 className="text-5xl sm:text-6xl font-black font-heading text-primary tracking-tighter italic uppercase mb-12">
           FAQ
         </h1>
 
@@ -41,16 +41,16 @@ export default function Faq() {
           {FAQS.map((item, idx) => {
             const isOpen = openIdx === idx;
             return (
-              <div key={idx} className="bg-gray-50 rounded-[1.8rem] border border-gray-100 overflow-hidden">
+              <div key={idx} className="bg-cream rounded-[1.8rem] border border-oat overflow-hidden">
                 <button
                   onClick={() => setOpenIdx(isOpen ? -1 : idx)}
                   className="w-full flex items-center justify-between gap-4 px-6 sm:px-8 py-5 text-left"
                 >
-                  <span className="font-black text-gray-900 uppercase tracking-tight italic text-sm">{item.q}</span>
+                  <span className="font-black text-primary uppercase tracking-tight italic text-sm">{item.q}</span>
                   <ChevronDown className={`w-5 h-5 text-primary flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isOpen && (
-                  <p className="px-6 sm:px-8 pb-6 text-sm text-gray-500 font-medium leading-relaxed">
+                  <p className="px-6 sm:px-8 pb-6 text-sm text-secondary font-medium leading-relaxed">
                     {item.a}
                   </p>
                 )}

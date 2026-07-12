@@ -61,7 +61,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-cream flex flex-col justify-center py-12 px-6 lg:px-8 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
 
@@ -74,13 +74,13 @@ export default function ResetPassword() {
             <span className="mt-4 text-[10px] font-black text-primary uppercase tracking-[0.4em] italic">Nayea.id</span>
           </Link>
         </div>
-        <h2 className="text-center text-4xl font-black font-heading text-gray-900 tracking-tighter italic uppercase">
+        <h2 className="text-center text-4xl font-black font-heading text-primary tracking-tighter italic uppercase">
           Set Password Baru
         </h2>
       </div>
 
       <div className="mt-12 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-gray-100 sm:px-12">
+        <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-oat sm:px-12">
           {checkingSession ? (
             <div className="text-center py-8">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
@@ -107,25 +107,25 @@ export default function ResetPassword() {
                 </div>
               )}
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 italic">Password Baru</label>
+                <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3 italic">Password Baru</label>
                 <input
                   type="password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full px-6 py-4 bg-gray-50 border-2 border-gray-50 rounded-[1.5rem] text-sm font-black italic text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                  className="block w-full px-6 py-4 bg-cream border-2 border-cream rounded-[1.5rem] text-sm font-black italic text-primary placeholder-secondary-light focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 italic">Konfirmasi Password</label>
+                <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3 italic">Konfirmasi Password</label>
                 <input
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full px-6 py-4 bg-gray-50 border-2 border-gray-50 rounded-[1.5rem] text-sm font-black italic text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                  className="block w-full px-6 py-4 bg-cream border-2 border-cream rounded-[1.5rem] text-sm font-black italic text-primary placeholder-secondary-light focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                 />
               </div>
               <button

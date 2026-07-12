@@ -45,7 +45,7 @@ export default function Catalog() {
   });
 
   return (
-    <div className="bg-white min-h-screen py-16 sm:py-24">
+    <div className="bg-cream min-h-screen py-16 sm:py-24">
       <SEO
         title="Katalog Produk"
         description="Jelajahi koleksi lengkap kerudung dan modest fashion Nayea.id — ready stock maupun pre-order, kualitas premium untuk perempuan modern."
@@ -56,28 +56,28 @@ export default function Catalog() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
           <div className="max-w-xl">
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Our Collections</span>
-            <h1 className="text-4xl sm:text-7xl font-black font-heading text-gray-900 tracking-tighter italic uppercase leading-none">THE CATALOG</h1>
-            <p className="mt-4 text-gray-400 font-bold uppercase tracking-widest text-[10px] italic">Discover {filteredProducts.length} curated pieces</p>
+            <h1 className="text-4xl sm:text-7xl font-black font-heading text-primary tracking-tighter italic uppercase leading-none">THE CATALOG</h1>
+            <p className="mt-4 text-secondary font-bold uppercase tracking-widest text-[10px] italic">Discover {filteredProducts.length} curated pieces</p>
           </div>
 
           {/* Search + Filters */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-light" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Cari produk..."
-                  className="w-full pl-11 pr-9 py-3 rounded-[1.5rem] bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-xs font-bold text-gray-900 placeholder-gray-300 transition-all"
+                  className="w-full pl-11 pr-9 py-3 rounded-[1.5rem] bg-cream border border-oat focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-xs font-bold text-primary placeholder-secondary-light transition-all"
                 />
                 {searchTerm && (
-                  <button onClick={() => handleSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-gray-900 transition-colors">
+                  <button onClick={() => handleSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-secondary-light hover:text-primary transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 )}
              </div>
-             <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-[1.8rem] border border-gray-100 overflow-x-auto hide-scrollbar">
+             <div className="flex items-center gap-2 p-1.5 bg-cream rounded-[1.8rem] border border-oat overflow-x-auto hide-scrollbar">
                <FilterButton active={activeFilter === 'all'} onClick={() => setFilter('all')}>ALL PIECES</FilterButton>
                <FilterButton active={activeFilter === 'preorder'} onClick={() => setFilter('preorder')}>PRE-ORDER</FilterButton>
              </div>
@@ -87,13 +87,13 @@ export default function Catalog() {
         {loading ? (
           <div className="flex justify-center items-center py-40">
              <div className="relative">
-                <div className="w-16 h-16 border-4 border-gray-100 rounded-full" />
+                <div className="w-16 h-16 border-4 border-oat rounded-full" />
                 <div className="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
              </div>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-32 bg-gray-50 rounded-[4rem] border border-gray-100">
-            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs italic">No items found in this category.</p>
+          <div className="text-center py-32 bg-cream rounded-[4rem] border border-oat">
+            <p className="text-secondary font-bold uppercase tracking-widest text-xs italic">No items found in this category.</p>
             <button onClick={() => { setFilter('all'); handleSearchChange(''); }} className="mt-6 text-primary font-black uppercase tracking-widest text-[10px] hover:underline">
               CLEAR SELECTIONS
             </button>
@@ -101,8 +101,8 @@ export default function Catalog() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProducts.map((product) => (
-              <div key={product.id} className="group relative bg-white rounded-[2.5rem] p-4 border border-gray-100 hover:border-transparent hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500">
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-gray-100">
+              <div key={product.id} className="group relative bg-white rounded-[2.5rem] p-4 border border-oat hover:border-transparent hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500">
+                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-oat">
                   <img
                     src={product.image_url || 'https://via.placeholder.com/400x400?text=No+Image'}
                     alt={product.name}
@@ -120,21 +120,21 @@ export default function Catalog() {
                   )}
 
                   <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                     <Link to={`/product/${product.id}`} className="w-full py-4 bg-white/95 backdrop-blur-md text-gray-900 rounded-[1.2rem] text-center font-black text-[10px] uppercase tracking-widest shadow-xl block hover:bg-white active:scale-95 transition-all outline-none">
+                     <Link to={`/product/${product.id}`} className="w-full py-4 bg-white/95 backdrop-blur-md text-primary rounded-[1.2rem] text-center font-black text-[10px] uppercase tracking-widest shadow-xl block hover:bg-white active:scale-95 transition-all outline-none">
                         VIEW DETAIL
                      </Link>
                   </div>
                 </div>
                 
                 <div className="mt-6 px-2 space-y-1">
-                  <h3 className="text-sm font-black font-heading text-gray-900 uppercase tracking-tight italic line-clamp-1 group-hover:text-primary transition-colors">
+                  <h3 className="text-sm font-black font-heading text-primary uppercase tracking-tight italic line-clamp-1 group-hover:text-primary transition-colors">
                     {product.name}
                   </h3>
                   <div className="flex items-center justify-between">
-                     <p className="text-base font-black text-gray-400 tracking-tighter italic">
+                     <p className="text-base font-black text-secondary tracking-tighter italic">
                         Rp {product.price.toLocaleString('id-ID')}
                      </p>
-                     <button className="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-all active:scale-90 shadow-sm border border-gray-100/50">
+                     <button className="w-10 h-10 bg-cream text-secondary rounded-xl flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-all active:scale-90 shadow-sm border border-oat/50">
                         <ShoppingBag className="w-4 h-4" />
                      </button>
                   </div>
@@ -155,7 +155,7 @@ function FilterButton({ active, children, onClick }) {
       onClick={onClick}
       className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all italic active:scale-95 ${active
           ? 'bg-primary text-white shadow-lg shadow-primary/20'
-          : 'text-gray-400 hover:text-gray-900'
+          : 'text-secondary hover:text-primary'
         }`}
     >
       {children}

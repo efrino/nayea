@@ -54,7 +54,7 @@ export default function StoreLogin() {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-6 lg:px-8 relative overflow-hidden">
+        <div className="min-h-screen bg-cream flex flex-col justify-center py-12 px-6 lg:px-8 relative overflow-hidden">
             {/* Background Decor */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
@@ -68,16 +68,16 @@ export default function StoreLogin() {
                         <span className="mt-4 text-[10px] font-black text-primary uppercase tracking-[0.4em] italic">Nayea.id</span>
                     </Link>
                 </div>
-                <h2 className="text-center text-4xl font-black font-heading text-gray-900 tracking-tighter italic uppercase">
+                <h2 className="text-center text-4xl font-black font-heading text-primary tracking-tighter italic uppercase">
                     Welcome Back
                 </h2>
-                <p className="mt-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest italic">
+                <p className="mt-4 text-center text-xs font-black text-secondary uppercase tracking-widest italic">
                     Step into your curated collection
                 </p>
             </div>
 
             <div className="mt-12 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-                <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-gray-100 sm:px-12">
+                <div className="bg-white/80 backdrop-blur-xl py-10 px-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] border border-oat sm:px-12">
                     <form className="space-y-8" onSubmit={handleLogin}>
                         {showResetSuccess && (
                             <div className="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
@@ -93,20 +93,20 @@ export default function StoreLogin() {
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 italic">Email Address</label>
+                                <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3 italic">Email Address</label>
                                 <input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Enter your email"
-                                    className="block w-full px-6 py-4 bg-gray-50 border-2 border-gray-50 rounded-[1.5rem] text-sm font-black italic text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                                    className="block w-full px-6 py-4 bg-cream border-2 border-cream rounded-[1.5rem] text-sm font-black italic text-primary placeholder-secondary-light focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                                 />
                             </div>
 
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Password</label>
+                                    <label className="block text-[10px] font-black text-secondary uppercase tracking-widest italic">Password</label>
                                     <Link to="/forgot-password" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline italic">Forgot?</Link>
                                 </div>
                                 <input
@@ -115,7 +115,7 @@ export default function StoreLogin() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="block w-full px-6 py-4 bg-gray-50 border-2 border-gray-50 rounded-[1.5rem] text-sm font-black italic text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                                    className="block w-full px-6 py-4 bg-cream border-2 border-cream rounded-[1.5rem] text-sm font-black italic text-primary placeholder-secondary-light focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                                 />
                             </div>
                         </div>
@@ -132,10 +132,10 @@ export default function StoreLogin() {
 
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-100" />
+                                <div className="w-full border-t border-oat" />
                             </div>
                             <div className="relative flex justify-center text-[9px] font-black uppercase tracking-widest italic">
-                                <span className="px-4 bg-white text-gray-300">Alternate Gateway</span>
+                                <span className="px-4 bg-white text-secondary-light">Alternate Gateway</span>
                             </div>
                         </div>
 
@@ -144,7 +144,7 @@ export default function StoreLogin() {
                                 type="button"
                                 onClick={handleGoogleLogin}
                                 disabled={loading}
-                                className="w-full flex items-center justify-center gap-4 py-5 px-8 bg-white border-2 border-gray-50 hover:border-primary/20 hover:bg-gray-50 rounded-[1.5rem] font-black text-[12px] uppercase tracking-widest italic text-gray-600 transition-all shadow-sm active:scale-95"
+                                className="w-full flex items-center justify-center gap-4 py-5 px-8 bg-white border-2 border-cream hover:border-primary/20 hover:bg-cream rounded-[1.5rem] font-black text-[12px] uppercase tracking-widest italic text-secondary transition-all shadow-sm active:scale-95"
                             >
                                 <Chrome className="w-5 h-5 text-rose-500" />
                                 Continue with Google
@@ -152,8 +152,8 @@ export default function StoreLogin() {
                         </div>
                     </form>
 
-                    <div className="mt-12 pt-8 border-t border-gray-50">
-                        <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
+                    <div className="mt-12 pt-8 border-t border-cream">
+                        <p className="text-center text-[10px] font-black text-secondary uppercase tracking-widest italic">
                             New to our pieces?{' '}
                             <Link to="/register" className="text-primary hover:text-primary-dark ml-2 hover:underline">
                                 Start Here

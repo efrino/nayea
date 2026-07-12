@@ -32,21 +32,21 @@ export default function Navbar() {
   }, [user]);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-50 shadow-sm">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-cream shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="text-3xl font-black font-heading text-gray-900 tracking-tighter italic uppercase">
+            <Link to="/" className="text-3xl font-black font-heading text-primary tracking-tighter italic uppercase">
               NAYEA<span className="text-primary not-italic">.</span>ID
             </Link>
           </div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-10">
-            <Link to="/" className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition-all">Home</Link>
-            <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition-all">Catalog</Link>
-            <Link to="/about" className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition-all">About Us</Link>
+            <Link to="/" className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary hover:text-primary transition-all">Home</Link>
+            <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary hover:text-primary transition-all">Catalog</Link>
+            <Link to="/about" className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary hover:text-primary transition-all">About Us</Link>
           </div>
 
           {/* Icons */}
@@ -58,7 +58,7 @@ export default function Navbar() {
             )}
 
             <div className="flex items-center gap-1 sm:gap-2">
-              <Link to="/wishlist" className="p-2.5 text-gray-400 hover:text-rose-500 transition-all relative group" title="Wishlist">
+              <Link to="/wishlist" className="p-2.5 text-secondary hover:text-rose-500 transition-all relative group" title="Wishlist">
                 <Heart className="w-5 h-5 group-hover:fill-current" />
                 {wishlistCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-4 h-4 text-[9px] font-black leading-none text-white bg-rose-500 rounded-full ring-2 ring-white">
@@ -66,7 +66,7 @@ export default function Navbar() {
                   </span>
                 )}
               </Link>
-              <Link to="/cart" className="p-2.5 text-gray-400 hover:text-primary transition-all relative group" title="Keranjang">
+              <Link to="/cart" className="p-2.5 text-secondary hover:text-primary transition-all relative group" title="Keranjang">
                 <ShoppingBag className="w-5 h-5 group-hover:fill-current" />
                 {cartCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-4 h-4 text-[9px] font-black leading-none text-white bg-primary rounded-full ring-2 ring-white">
@@ -78,18 +78,18 @@ export default function Navbar() {
 
             {/* Customer Authentication (Desktop) */}
             {user ? (
-              <div className="hidden md:flex items-center gap-4 ml-4 pl-4 border-l border-gray-100">
+              <div className="hidden md:flex items-center gap-4 ml-4 pl-4 border-l border-oat">
                 <Link to="/profile" className="flex flex-col items-end group">
-                  <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter italic group-hover:text-primary transition-colors">{user.user_metadata?.full_name || 'Customer'}</span>
-                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.1em]">Verified Account</span>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-tighter italic group-hover:text-primary transition-colors">{user.user_metadata?.full_name || 'Customer'}</span>
+                  <span className="text-[8px] font-bold text-secondary uppercase tracking-[0.1em]">Verified Account</span>
                 </Link>
-                <button onClick={logout} className="p-2.5 bg-gray-50 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all" title="Logout">
+                <button onClick={logout} className="p-2.5 bg-cream text-secondary hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all" title="Logout">
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-gray-100">
-                <Link to="/login" className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-all">
+              <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-oat">
+                <Link to="/login" className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-all">
                   Login
                 </Link>
                 <Link to="/register" className="gradient-primary text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-2xl hover:shadow-xl hover:shadow-primary/20 transition-all">
@@ -100,7 +100,7 @@ export default function Navbar() {
 
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)} 
-              className="md:hidden p-3 bg-gray-50 rounded-2xl text-gray-900 hover:bg-gray-100 transition-all border border-gray-100 active:scale-90"
+              className="md:hidden p-3 bg-cream rounded-2xl text-primary hover:bg-oat transition-all border border-oat active:scale-90"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -114,23 +114,23 @@ export default function Navbar() {
           was clipping this drawer to the nav bar's own height). */}
       {isMenuOpen && createPortal(
         <div className="fixed inset-0 z-[100] md:hidden isolate">
-          <div className="absolute inset-0 z-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>
+          <div className="absolute inset-0 z-0 bg-primary/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>
           <div className="absolute right-0 top-0 z-10 h-full w-4/5 max-w-sm bg-white shadow-2xl p-8 flex flex-col overflow-y-auto">
             <div className="flex justify-between items-center mb-12">
-              <span className="text-2xl font-black font-heading text-gray-900 italic uppercase tracking-tighter">NAYEA<span className="text-primary not-italic">.</span>ID</span>
-              <button onClick={() => setIsMenuOpen(false)} className="p-3 bg-gray-50 rounded-2xl text-gray-400 active:scale-90 transition-all"><X className="w-6 h-6" /></button>
+              <span className="text-2xl font-black font-heading text-primary italic uppercase tracking-tighter">NAYEA<span className="text-primary not-italic">.</span>ID</span>
+              <button onClick={() => setIsMenuOpen(false)} className="p-3 bg-cream rounded-2xl text-secondary active:scale-90 transition-all"><X className="w-6 h-6" /></button>
             </div>
 
             <div className="flex flex-col gap-6 flex-1">
-              <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-black font-heading text-gray-900 italic tracking-tight hover:text-primary transition-colors">HOME</Link>
-              <Link to="/catalog" onClick={() => setIsMenuOpen(false)} className="text-xl font-black font-heading text-gray-900 italic tracking-tight hover:text-primary transition-colors">CATALOG</Link>
-              <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-xl font-black font-heading text-gray-900 italic tracking-tight hover:text-primary transition-colors">ABOUT US</Link>
-              <div className="mt-4 pt-8 border-t border-gray-50 flex flex-col gap-4">
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-black font-heading text-primary italic tracking-tight hover:text-primary transition-colors">HOME</Link>
+              <Link to="/catalog" onClick={() => setIsMenuOpen(false)} className="text-xl font-black font-heading text-primary italic tracking-tight hover:text-primary transition-colors">CATALOG</Link>
+              <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-xl font-black font-heading text-primary italic tracking-tight hover:text-primary transition-colors">ABOUT US</Link>
+              <div className="mt-4 pt-8 border-t border-cream flex flex-col gap-4">
                  {user ? (
                    <>
-                      <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="block p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:border-primary/20 transition-all">
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Signed in as</p>
-                         <p className="text-lg font-black font-heading text-gray-900 tracking-tight italic uppercase">{user.user_metadata?.full_name}</p>
+                      <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="block p-6 rounded-3xl bg-cream border border-oat hover:border-primary/20 transition-all">
+                         <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Signed in as</p>
+                         <p className="text-lg font-black font-heading text-primary tracking-tight italic uppercase">{user.user_metadata?.full_name}</p>
                          <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2">Lihat Profil &rarr;</p>
                       </Link>
                       {isStaff(user.user_metadata?.role) && (
@@ -140,15 +140,15 @@ export default function Navbar() {
                    </>
                  ) : (
                    <>
-                      <Link to="/login" onClick={() => setIsMenuOpen(false)} className="w-full py-4 bg-gray-50 text-gray-900 rounded-[1.5rem] text-center font-black text-xs uppercase tracking-widest transition-all">LOGIN</Link>
+                      <Link to="/login" onClick={() => setIsMenuOpen(false)} className="w-full py-4 bg-cream text-primary rounded-[1.5rem] text-center font-black text-xs uppercase tracking-widest transition-all">LOGIN</Link>
                       <Link to="/register" onClick={() => setIsMenuOpen(false)} className="w-full py-4 gradient-primary text-white rounded-[1.5rem] text-center font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all">GET STARTED</Link>
                    </>
                  )}
               </div>
             </div>
 
-            <div className="pt-8 border-t border-gray-50">
-               <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] italic text-center">Nayea Official Store</p>
+            <div className="pt-8 border-t border-cream">
+               <p className="text-[10px] font-black text-secondary-light uppercase tracking-[0.3em] italic text-center">Nayea Official Store</p>
             </div>
           </div>
         </div>,

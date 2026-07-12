@@ -57,36 +57,54 @@ Semua token warna/font didefinisikan sebagai CSS variable Tailwind v4 di [src/in
 
 ### 5.1 Palet Warna
 
+Versi 2 (rebrand — lihat [§6](#6-keputusan-desain-yang-sudah-final-jangan-diubah-tanpa-diskusi-ulang)): tema hangat terinspirasi Ikebana, menggantikan tema emerald/indigo versi awal.
+
 | Token | Nilai | Peran |
 |---|---|---|
-| `--color-primary` | `#10B981` (emerald-500) | Warna utama brand: CTA, highlight, active state, badge harga |
-| `--color-primary-light` | `#34D399` | Hover/lighter variant primary |
-| `--color-primary-dark` | `#059669` | Gradient end, pressed state |
-| `--color-accent` | `#6366F1` (indigo-500) | Aksen sekunder (jarang dipakai langsung, lebih untuk variasi gradient) |
-| `--color-accent-light` | `#818CF8` | Lighter accent |
-| Background dasar | `#FBFBFE` | Body background, hampir putih dengan sedikit tone dingin |
-| Gray scale | Tailwind default `gray-*` | Teks, border, surface (`gray-900` untuk teks utama/dark section, `gray-400`/`gray-500` untuk teks sekunder) |
-| Dark section | `gray-900` | Section kontras tinggi (newsletter, notifikasi) — selalu dipasangkan teks putih |
-| Status warna | Tailwind semantic: `emerald-500` (success), `amber-600` (pre-order/warning), `red-*` (error/cancelled) | Konsisten pakai palet Tailwind bawaan untuk status, jangan bikin warna status baru |
+| `--color-primary` | `#4A3525` (Deep Warm Brown) | Teks utama, heading, tombol CTA penting, elemen penegas |
+| `--color-primary-light` | `#6F5643` | Hover/lighter variant primary |
+| `--color-primary-dark` | `#2E1F15` | Gradient end, pressed state, dark section (newsletter, toast, modal header) |
+| `--color-secondary` | `#9E8476` (Taupe / Muted Rose) | Sub-heading, teks sekunder/muted, aksen border |
+| `--color-secondary-light` | `#B7A79A` | Teks tersier/disabled, placeholder |
+| `--color-accent` | `#A3B19B` (Soft Sage Green) | Tombol CTA sekunder, badge promo — terinspirasi elemen daun/bunga |
+| `--color-accent-light` | `#C0CBB9` | Lighter accent |
+| `--color-cream` | `#F4EFEA` (Warm Cream/Beige) | Background dasar body & halaman — pengganti putih polos |
+| `--color-oat` | `#E3DAC9` (Almond/Oat) | Background section kedua (pembeda antar section), border halus |
+| Surface/card | `white` | Card & panel yang "mengambang" di atas background cream/oat (product card, modal, navbar, footer) — **tetap putih**, jangan diganti cream, supaya ada kontras elevasi |
+| Status warna | Tailwind semantic: `emerald-500` (success/stok tersedia), `amber-600` (pre-order/warning), `rose-500`/`red-*` (error/habis/cancelled) | **Di luar brand palette** — dipertahankan apa adanya di seluruh app (termasuk admin) karena maknanya universal (hijau=oke, merah=masalah). Jangan diganti ke sage/brown walau secara warna mirip. |
+
+**Cakupan rebrand:** token di atas + semua pemakaian `gray-*` Tailwind di komponen **storefront** (`src/pages/storefront/`, `src/components/layout/`, `src/components/auth/`, `src/components/chat/`, halaman auth/404) sudah dikonversi ke token warna baru. **Admin dashboard** (`src/pages/admin/`, `AdminLayout.jsx`) sengaja **tidak** direbrand — tetap pakai `gray-*` netral sesuai keputusan lama bahwa admin boleh lebih plain/fungsional (lihat [§6](#6-keputusan-desain-yang-sudah-final-jangan-diubah-tanpa-diskusi-ulang)).
+
+**Mapping gray→warna baru yang dipakai** (referensi kalau nambah kode baru di storefront):
+| Gray lama | Token baru | Alasan |
+|---|---|---|
+| `gray-900`, `gray-800` | `primary` | Teks utama/heading, dark section |
+| `gray-700`–`gray-400` | `secondary` | Teks sekunder/muted |
+| `gray-300` | `secondary-light` | Placeholder, disabled, ikon tersier |
+| `gray-200`, `gray-100` | `oat` | Border halus, divider |
+| `gray-50` | `cream` | Section background kedua |
+| `white` (card/panel) | `white` (tidak berubah) | Surface elevasi di atas cream/oat |
 
 **Shadow tokens:**
-- `--shadow-premium`: `0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05)` — untuk card premium/elevated.
-- `--shadow-glass`: `0 8px 32px 0 rgba(31,38,135,0.07)` — dipakai bersama `.glass-effect` (blur + transparansi putih).
+- `--shadow-premium`: `0 10px 25px -5px rgba(74,53,37,0.08), 0 8px 10px -6px rgba(74,53,37,0.06)` — untuk card premium/elevated (tint brown, bukan hitam netral).
+- `--shadow-glass`: `0 8px 32px 0 rgba(74,53,37,0.07)` — dipakai bersama `.glass-effect`.
 
 **Utility class turunan** (didefinisikan di `@layer utilities`, dipakai lintas halaman):
 - `.glass-effect` — kartu/panel efek glassmorphism.
-- `.gradient-primary` — gradient emerald untuk CTA utama.
-- `.gradient-accent` — gradient indigo untuk aksen sekunder.
+- `.gradient-primary` — gradient brown (primary→primary-dark) untuk CTA utama.
+- `.gradient-accent` — gradient sage (accent→accent-light) untuk aksen sekunder.
 - `.text-gradient` — teks gradient primary→accent, dipakai terbatas untuk highlight kata kunci.
 
 ### 5.2 Tipografi
 
 | Token | Font | Pemakaian |
 |---|---|---|
-| `--font-sans` | Inter (300–700) | Body text, paragraf, form, label |
-| `--font-heading` | Outfit (300–700) | Semua `h1`–`h6` (di-apply global lewat `@layer base`) |
+| `--font-sans` | Montserrat (300–800), fallback Inter | Body text, paragraf, form, label |
+| `--font-heading` | Playfair Display (serif, ital+400–900) | Semua `h1`–`h6` (di-apply global lewat `@layer base`) — kesan anggun/majalah fashion high-end |
 
 Font dimuat via Google Fonts `@import` di [src/index.css](../src/index.css) — kalau nambah font baru, tambahkan family + weight di `@import` yang sama, jangan bikin `<link>` terpisah di HTML.
+
+Alternatif yang dipertimbangkan tapi tidak dipakai (catat di sini kalau suatu saat mau eksperimen ulang): heading `Cormorant Garamond` (lebih ramping/puitis) + body `Lato`/`Open Sans`.
 
 **Gaya heading khas Nayea** (harus konsisten di semua halaman baru):
 - Bold maksimal: `font-black`
@@ -136,6 +154,8 @@ Kalau bikin komponen baru, contek pattern dari:
 
 ## 6. Keputusan desain yang sudah final (jangan diubah tanpa diskusi ulang)
 
-- Palet warna (emerald primary + indigo accent) — dikonfirmasi dipertahankan, **tidak** diganti ke tema modest-fashion warna hangat (dusty rose/gold) meski itu sempat jadi opsi.
+- **[Update]** Palet warna direbrand total ke tema hangat Ikebana-inspired (Deep Warm Brown primary, Taupe secondary, Soft Sage Green accent, Cream/Oat background) + tipografi Playfair Display (heading) & Montserrat (body). Ini menggantikan keputusan lama "emerald primary + indigo accent" yang sebelumnya tercatat final di sini — jangan bingung kalau lihat referensi lama ke warna emerald/indigo di commit history, itu sudah tidak berlaku.
+- Rebrand warna **hanya mencakup storefront**, admin dashboard sengaja dibiarkan pakai gray-scale netral Tailwind biasa (lihat §5.1).
+- Warna status (emerald=sukses, amber=warning, rose/red=error) **bukan** bagian dari brand palette dan dipertahankan di seluruh app termasuk admin — jangan diganti ke sage/brown.
 - Signature look "bold uppercase italic, radius besar" tetap dipakai untuk semua halaman baru storefront.
 - Admin dashboard boleh lebih plain/fungsional, tidak wajib se-dekoratif storefront.

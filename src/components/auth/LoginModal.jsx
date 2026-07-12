@@ -89,7 +89,7 @@ export default function LoginModal() {
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-br from-gray-900 to-black px-6 pt-10 pb-12 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-primary to-black px-6 pt-10 pb-12 text-white text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <button
             onClick={closeLoginModal}
@@ -102,20 +102,20 @@ export default function LoginModal() {
           </div>
           <h2 className="text-2xl font-black font-heading tracking-tighter italic uppercase leading-none">Access Nayea</h2>
           {hint && HINT_TEXT[hint] && (
-            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">Identity required {HINT_TEXT[hint]}</p>
+            <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">Identity required {HINT_TEXT[hint]}</p>
           )}
         </div>
 
         {/* Card body, overlapping header slightly */}
         <div className="px-6 pb-6 -mt-4">
-          <div className="bg-white rounded-xl shadow-md p-5 border border-gray-100">
+          <div className="bg-white rounded-xl shadow-md p-5 border border-oat">
 
             {/* Google OAuth */}
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 shadow-sm mb-4"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-oat rounded-xl text-sm font-medium text-secondary hover:bg-cream hover:border-secondary-light transition-all disabled:opacity-50 shadow-sm mb-4"
             >
               <Chrome className="w-5 h-5 text-red-500" />
               Lanjutkan dengan Google
@@ -123,9 +123,9 @@ export default function LoginModal() {
 
             {/* Divider */}
             <div className="relative flex items-center mb-4">
-              <div className="flex-1 border-t border-gray-200" />
-              <span className="px-3 text-xs text-gray-400 font-medium">atau dengan email</span>
-              <div className="flex-1 border-t border-gray-200" />
+              <div className="flex-1 border-t border-oat" />
+              <span className="px-3 text-xs text-secondary font-medium">atau dengan email</span>
+              <div className="flex-1 border-t border-oat" />
             </div>
 
             {/* Error */}
@@ -138,25 +138,25 @@ export default function LoginModal() {
             {/* Email/Password Form */}
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Alamat Email</label>
+                <label className="block text-xs font-semibold text-secondary mb-1">Alamat Email</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="email@contoh.com"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder-gray-400"
+                  className="w-full px-4 py-2.5 border border-oat rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder-secondary"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Password</label>
+                <label className="block text-xs font-semibold text-secondary mb-1">Password</label>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder-gray-400"
+                  className="w-full px-4 py-2.5 border border-oat rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder-secondary"
                 />
               </div>
               <button
@@ -171,7 +171,7 @@ export default function LoginModal() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-sm text-gray-500 mt-4">
+          <p className="text-center text-sm text-secondary mt-4">
             Belum punya akun?{' '}
             <Link
               to="/register"

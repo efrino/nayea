@@ -48,19 +48,19 @@ export default function Wishlist() {
     // Guest view — locked state (modal also opens automatically above)
     if (!user) {
         return (
-            <div className="bg-gray-50 min-h-screen py-12 sm:py-20">
+            <div className="bg-cream min-h-screen py-12 sm:py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Saved Pieces</span>
-                    <h1 className="text-4xl sm:text-5xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-10 flex items-center gap-4">
+                    <h1 className="text-4xl sm:text-5xl font-black font-heading text-primary tracking-tighter italic uppercase mb-10 flex items-center gap-4">
                         <Heart className="w-9 h-9 text-primary fill-current" />
                         Wishlist Saya
                     </h1>
-                    <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm p-12 text-center">
+                    <div className="bg-white rounded-[3rem] border border-oat shadow-sm p-12 text-center">
                         <div className="w-20 h-20 bg-primary/5 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
                             <Lock className="w-10 h-10 text-primary" />
                         </div>
-                        <h2 className="text-2xl font-black font-heading text-gray-900 italic uppercase mb-2">Login untuk melihat wishlist</h2>
-                        <p className="text-gray-500 font-medium mb-8">Daftar atau masuk ke akun untuk menyimpan dan melihat produk favorit Anda.</p>
+                        <h2 className="text-2xl font-black font-heading text-primary italic uppercase mb-2">Login untuk melihat wishlist</h2>
+                        <p className="text-secondary font-medium mb-8">Daftar atau masuk ke akun untuk menyimpan dan melihat produk favorit Anda.</p>
                         <button
                             onClick={() => openLoginModal(null, 'wishlist')}
                             className="inline-flex items-center px-8 py-4 gradient-primary text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all"
@@ -74,10 +74,10 @@ export default function Wishlist() {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen py-12 sm:py-20">
+        <div className="bg-cream min-h-screen py-12 sm:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Saved Pieces</span>
-                <h1 className="text-4xl sm:text-5xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-10 flex items-center gap-4">
+                <h1 className="text-4xl sm:text-5xl font-black font-heading text-primary tracking-tighter italic uppercase mb-10 flex items-center gap-4">
                     <Heart className="w-9 h-9 text-primary fill-current" />
                     Wishlist Saya
                 </h1>
@@ -87,10 +87,10 @@ export default function Wishlist() {
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                     </div>
                 ) : wishlistItems.length === 0 ? (
-                    <div className="bg-white rounded-[3rem] shadow-sm p-12 text-center border border-gray-100">
-                        <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h2 className="text-2xl font-black font-heading text-gray-900 italic uppercase mb-2">Wishlist Anda kosong</h2>
-                        <p className="text-gray-500 font-medium mb-8">Temukan produk favorit Anda dan simpan ke Wishlist untuk dibeli nanti!</p>
+                    <div className="bg-white rounded-[3rem] shadow-sm p-12 text-center border border-oat">
+                        <Heart className="w-16 h-16 text-secondary-light mx-auto mb-4" />
+                        <h2 className="text-2xl font-black font-heading text-primary italic uppercase mb-2">Wishlist Anda kosong</h2>
+                        <p className="text-secondary font-medium mb-8">Temukan produk favorit Anda dan simpan ke Wishlist untuk dibeli nanti!</p>
                         <Link to="/catalog" className="inline-flex items-center px-8 py-4 gradient-primary text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">
                             Mulai Eksplorasi
                         </Link>
@@ -104,8 +104,8 @@ export default function Wishlist() {
                             const imageSrc = (product.images && product.images.length > 0) ? product.images[0] : (product.image_url || 'https://via.placeholder.com/400x400?text=No+Image');
 
                             return (
-                                <div key={item.id} className="bg-white rounded-[2.5rem] p-4 border border-gray-100 hover:border-transparent hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 group flex flex-col">
-                                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-gray-100">
+                                <div key={item.id} className="bg-white rounded-[2.5rem] p-4 border border-oat hover:border-transparent hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 group flex flex-col">
+                                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-oat">
                                         <img
                                             src={imageSrc}
                                             alt={product.name}
@@ -121,19 +121,19 @@ export default function Wishlist() {
                                         </button>
                                         {product.stock === 0 && (
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                <span className="bg-white/90 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest italic text-gray-900">Stok Habis</span>
+                                                <span className="bg-white/90 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest italic text-primary">Stok Habis</span>
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="mt-6 px-2 space-y-1 flex-1 flex flex-col">
                                         <Link to={`/product/${product.id}`} className="block">
-                                            <h3 className="text-sm font-black font-heading text-gray-900 uppercase tracking-tight italic line-clamp-1 hover:text-primary transition-colors">
+                                            <h3 className="text-sm font-black font-heading text-primary uppercase tracking-tight italic line-clamp-1 hover:text-primary transition-colors">
                                                 {product.name}
                                             </h3>
                                         </Link>
                                         <div className="mt-auto pt-4">
-                                            <p className="text-base font-black text-gray-900 tracking-tighter italic">Rp {product.price.toLocaleString('id-ID')}</p>
+                                            <p className="text-base font-black text-primary tracking-tighter italic">Rp {product.price.toLocaleString('id-ID')}</p>
                                             <Link
                                                 to={`/product/${product.id}`}
                                                 className="mt-4 w-full flex items-center justify-center px-4 py-3 border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-[1.2rem] font-black uppercase tracking-widest transition-all text-[10px] gap-2 active:scale-95"

@@ -207,7 +207,7 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="bg-white min-h-screen py-32 flex justify-center items-center">
+      <div className="bg-cream min-h-screen py-32 flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -215,8 +215,8 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="bg-white min-h-screen py-32 flex flex-col justify-center items-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Produk tidak ditemukan</h2>
+      <div className="bg-cream min-h-screen py-32 flex flex-col justify-center items-center">
+        <h2 className="text-2xl font-bold text-primary mb-4">Produk tidak ditemukan</h2>
         <Link to="/catalog" className="text-primary hover:underline flex items-center">
           <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Katalog
         </Link>
@@ -225,7 +225,7 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="bg-white min-h-screen py-10 sm:py-16 relative">
+    <div className="bg-cream min-h-screen py-10 sm:py-16 relative">
       <SEO
         title={product.name}
         description={product.description?.slice(0, 160) || `${product.name} — kerudung dan modest fashion premium dari Nayea.id. Rp ${product.price.toLocaleString('id-ID')}.`}
@@ -243,8 +243,8 @@ export default function ProductDetail() {
 
         {/* Breadcrumb */}
         <nav className="flex mb-12 sm:mb-16" aria-label="Breadcrumb">
-          <Link to="/catalog" className="group flex items-center text-[10px] font-black text-gray-400 hover:text-primary transition-all uppercase tracking-widest italic">
-            <div className="p-2 bg-gray-50 rounded-full mr-3 group-hover:bg-primary/10 transition-all">
+          <Link to="/catalog" className="group flex items-center text-[10px] font-black text-secondary hover:text-primary transition-all uppercase tracking-widest italic">
+            <div className="p-2 bg-cream rounded-full mr-3 group-hover:bg-primary/10 transition-all">
                <ArrowLeft className="w-4 h-4" />
             </div>
             Back to Collection
@@ -254,7 +254,7 @@ export default function ProductDetail() {
         <div className="lg:grid lg:grid-cols-2 lg:gap-x-16 xl:gap-x-24">
           {/* Main Gallery Frame */}
           <div className="flex flex-col gap-6">
-            <div className="w-full relative bg-gray-50 rounded-[3rem] overflow-hidden aspect-[4/5] sm:aspect-square lg:aspect-[4/5] shadow-sm border border-gray-100">
+            <div className="w-full relative bg-cream rounded-[3rem] overflow-hidden aspect-[4/5] sm:aspect-square lg:aspect-[4/5] shadow-sm border border-oat">
               {isVideoActive && product.video_url ? (
                 <video src={product.video_url} autoPlay loop muted playsInline controls className="object-cover object-center w-full h-full bg-black"></video>
               ) : (
@@ -278,7 +278,7 @@ export default function ProductDetail() {
               {product.video_url && (
                 <button
                   onClick={() => { setIsVideoActive(true); setActiveImage(null); }}
-                  className={`relative h-24 w-24 flex-shrink-0 cursor-pointer rounded-[1.5rem] overflow-hidden bg-gray-900 group transition-all ${isVideoActive ? 'ring-4 ring-primary ring-offset-4' : 'opacity-60 hover:opacity-100'}`}
+                  className={`relative h-24 w-24 flex-shrink-0 cursor-pointer rounded-[1.5rem] overflow-hidden bg-primary group transition-all ${isVideoActive ? 'ring-4 ring-primary ring-offset-4' : 'opacity-60 hover:opacity-100'}`}
                 >
                   <div className="absolute inset-0 flex items-center justify-center">
                     <PlayCircle className="w-10 h-10 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -289,7 +289,7 @@ export default function ProductDetail() {
                 <button
                   key={idx}
                   onClick={() => { setIsVideoActive(false); setActiveImage(img); }}
-                  className={`relative h-24 w-24 flex-shrink-0 cursor-pointer rounded-[1.5rem] overflow-hidden bg-gray-50 transition-all ${!isVideoActive && activeImage === img ? 'ring-4 ring-primary ring-offset-4' : 'opacity-60 hover:opacity-100'}`}
+                  className={`relative h-24 w-24 flex-shrink-0 cursor-pointer rounded-[1.5rem] overflow-hidden bg-cream transition-all ${!isVideoActive && activeImage === img ? 'ring-4 ring-primary ring-offset-4' : 'opacity-60 hover:opacity-100'}`}
                 >
                   <img src={img} alt={`Thumbnail ${idx}`} className="object-cover object-center w-full h-full" />
                 </button>
@@ -301,30 +301,30 @@ export default function ProductDetail() {
           <div className="mt-12 sm:mt-16 lg:mt-0 flex flex-col">
             <div className="flex-1">
                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Nayea Selection</span>
-               <h1 className="text-4xl sm:text-6xl font-black font-heading text-gray-900 tracking-tighter italic uppercase leading-tight mb-4">{product.name}</h1>
+               <h1 className="text-4xl sm:text-6xl font-black font-heading text-primary tracking-tighter italic uppercase leading-tight mb-4">{product.name}</h1>
 
                {reviews.length > 0 && (
                  <div className="flex items-center gap-2 mb-6">
                    <div className="flex items-center">
                      {[1, 2, 3, 4, 5].map((n) => (
-                       <Star key={n} className={`w-4 h-4 ${n <= Math.round(averageRating) ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} />
+                       <Star key={n} className={`w-4 h-4 ${n <= Math.round(averageRating) ? 'text-amber-400 fill-current' : 'text-oat fill-current'}`} />
                      ))}
                    </div>
-                   <span className="text-xs font-black text-gray-900">{averageRating.toFixed(1)}</span>
-                   <span className="text-xs font-medium text-gray-400">({reviews.length} ulasan)</span>
+                   <span className="text-xs font-black text-primary">{averageRating.toFixed(1)}</span>
+                   <span className="text-xs font-medium text-secondary">({reviews.length} ulasan)</span>
                  </div>
                )}
 
-               <div className="flex items-center justify-between mb-10 pb-10 border-b border-gray-50">
+               <div className="flex items-center justify-between mb-10 pb-10 border-b border-cream">
                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price Value</span>
-                    <p className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter italic">
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Price Value</span>
+                    <p className="text-4xl sm:text-5xl font-black text-primary tracking-tighter italic">
                        Rp {product.price.toLocaleString('id-ID')}
                     </p>
                  </div>
                  <button
                    onClick={handleToggleWishlist}
-                   className={`p-5 rounded-2xl transition-all flex items-center justify-center shadow-xl active:scale-90 ${isWishlisted ? 'bg-rose-50 text-rose-500 shadow-rose-500/10' : 'bg-gray-50 text-gray-300 hover:text-rose-500 shadow-gray-200/10'}`}
+                   className={`p-5 rounded-2xl transition-all flex items-center justify-center shadow-xl active:scale-90 ${isWishlisted ? 'bg-rose-50 text-rose-500 shadow-rose-500/10' : 'bg-cream text-secondary-light hover:text-rose-500 shadow-oat/10'}`}
                    title="Add to Wishlist"
                  >
                    <Heart className={`w-7 h-7 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -333,16 +333,16 @@ export default function ProductDetail() {
 
                {/* Meta Info grid */}
                <div className="grid grid-cols-2 gap-4 mb-10">
-                  <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100">
-                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Availability</p>
+                  <div className="p-5 bg-cream rounded-[2rem] border border-oat">
+                     <p className="text-[9px] font-black text-secondary uppercase tracking-widest mb-1.5">Availability</p>
                      <p className={`text-[12px] font-black uppercase italic ${product.stock > 0 ? 'text-green-600' : 'text-rose-600'}`}>
                         {product.stock > 0 ? `${product.stock} IN STOCK` : 'OUT OF STOCK'}
                      </p>
                   </div>
                   {product.material && (
-                    <div className="p-5 bg-gray-50 rounded-[2rem] border border-gray-100">
-                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fabrication</p>
-                       <p className="text-[12px] font-black uppercase italic text-gray-900 truncate">
+                    <div className="p-5 bg-cream rounded-[2rem] border border-oat">
+                       <p className="text-[9px] font-black text-secondary uppercase tracking-widest mb-1.5">Fabrication</p>
+                       <p className="text-[12px] font-black uppercase italic text-primary truncate">
                           {product.material}
                        </p>
                     </div>
@@ -352,7 +352,7 @@ export default function ProductDetail() {
                {/* Colors */}
                {product.colors && product.colors.length > 0 && (
                  <div className="mb-10">
-                   <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">Available Colorways</h3>
+                   <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-4 italic">Available Colorways</h3>
                    <div className="flex flex-wrap gap-3">
                      {product.colors.map((color, idx) => (
                        <button
@@ -361,7 +361,7 @@ export default function ProductDetail() {
                          className={`px-6 py-3.5 rounded-[1.2rem] border-2 font-black text-[10px] uppercase tracking-widest transition-all italic active:scale-95
                              ${selectedColor === color
                              ? 'border-primary bg-primary/5 text-primary shadow-xl shadow-primary/10'
-                             : 'border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-200 hover:text-gray-900 group-hover:bg-white'}`}
+                             : 'border-cream bg-cream text-secondary hover:border-oat hover:text-primary group-hover:bg-white'}`}
                        >
                          {color}
                        </button>
@@ -371,26 +371,26 @@ export default function ProductDetail() {
                )}
 
                <div className="mb-12">
-                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">Piece Description</h3>
-                 <div className="text-sm font-medium text-gray-500 leading-relaxed whitespace-pre-wrap max-w-xl">
+                 <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-4 italic">Piece Description</h3>
+                 <div className="text-sm font-medium text-secondary leading-relaxed whitespace-pre-wrap max-w-xl">
                    {product.description || "No additional details available for this curated piece."}
                  </div>
                </div>
             </div>
 
             {/* Sticky Action Bar for Mobile Ergonomics */}
-            <div className="mt-8 bg-white p-6 sm:p-8 border border-gray-100 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] space-y-8">
+            <div className="mt-8 bg-white p-6 sm:p-8 border border-oat rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                   <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 italic">Order Size</h3>
-                   <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-[1.5rem] border border-gray-100">
-                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={product.stock === 0} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-gray-900 font-black hover:text-primary transition-all disabled:opacity-50 active:scale-90 border border-gray-100 shadow-sm">-</button>
+                   <h3 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 italic">Order Size</h3>
+                   <div className="flex items-center gap-4 bg-cream p-2 rounded-[1.5rem] border border-oat">
+                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={product.stock === 0} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-primary font-black hover:text-primary transition-all disabled:opacity-50 active:scale-90 border border-oat shadow-sm">-</button>
                      <span className="w-8 text-center font-black italic">{quantity}</span>
-                     <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} disabled={product.stock === 0} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-gray-900 font-black hover:text-primary transition-all disabled:opacity-50 active:scale-90 border border-gray-100 shadow-sm">+</button>
+                     <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} disabled={product.stock === 0} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-primary font-black hover:text-primary transition-all disabled:opacity-50 active:scale-90 border border-oat shadow-sm">+</button>
                    </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">TOTAL ESTIMATE</p>
+                  <p className="text-[9px] font-black text-secondary uppercase tracking-widest mb-1">TOTAL ESTIMATE</p>
                   <p className="text-2xl font-black text-primary tracking-tighter italic">Rp {(product.price * quantity).toLocaleString('id-ID')}</p>
                 </div>
               </div>
@@ -422,13 +422,13 @@ export default function ProductDetail() {
             {/* Guarantees */}
             <div className="mt-12 group">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                 <div className="flex items-center p-4 bg-gray-50/50 rounded-2xl hover:bg-gray-50 transition-colors">
+                 <div className="flex items-center p-4 bg-cream/50 rounded-2xl hover:bg-cream transition-colors">
                     <div className="p-3 bg-white rounded-xl mr-4 shadow-sm"><Truck className="w-5 h-5 text-primary" /></div>
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic leading-tight">Fast Shipping<br/><span className="text-gray-300 font-bold lowercase">via professional courier</span></span>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-widest italic leading-tight">Fast Shipping<br/><span className="text-secondary-light font-bold lowercase">via professional courier</span></span>
                  </div>
-                 <div className="flex items-center p-4 bg-gray-50/50 rounded-2xl hover:bg-gray-50 transition-colors">
+                 <div className="flex items-center p-4 bg-cream/50 rounded-2xl hover:bg-cream transition-colors">
                     <div className="p-3 bg-white rounded-xl mr-4 shadow-sm"><ShieldCheck className="w-5 h-5 text-primary" /></div>
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic leading-tight">Official Piece<br/><span className="text-gray-300 font-bold lowercase">quality guarantee</span></span>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-widest italic leading-tight">Official Piece<br/><span className="text-secondary-light font-bold lowercase">quality guarantee</span></span>
                  </div>
               </div>
             </div>
@@ -437,15 +437,15 @@ export default function ProductDetail() {
         </div>
 
         {/* Reviews */}
-        <div className="mt-20 pt-16 border-t border-gray-50 max-w-3xl">
+        <div className="mt-20 pt-16 border-t border-cream max-w-3xl">
           <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Customer Voices</span>
-          <h2 className="text-3xl sm:text-4xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-10">
+          <h2 className="text-3xl sm:text-4xl font-black font-heading text-primary tracking-tighter italic uppercase mb-10">
             {reviews.length > 0 ? `${reviews.length} ULASAN` : 'ULASAN PRODUK'}
           </h2>
 
           {canReview && (
-            <form onSubmit={handleSubmitReview} className="mb-12 p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest italic mb-4">Bagikan Pendapatmu</h3>
+            <form onSubmit={handleSubmitReview} className="mb-12 p-8 bg-cream rounded-[2.5rem] border border-oat">
+              <h3 className="text-sm font-black text-primary uppercase tracking-widest italic mb-4">Bagikan Pendapatmu</h3>
               <div className="flex items-center gap-2 mb-5">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -454,7 +454,7 @@ export default function ProductDetail() {
                     onClick={() => setReviewForm((prev) => ({ ...prev, rating: n }))}
                     className="active:scale-90 transition-transform"
                   >
-                    <Star className={`w-7 h-7 ${n <= reviewForm.rating ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} />
+                    <Star className={`w-7 h-7 ${n <= reviewForm.rating ? 'text-amber-400 fill-current' : 'text-oat fill-current'}`} />
                   </button>
                 ))}
               </div>
@@ -463,7 +463,7 @@ export default function ProductDetail() {
                 value={reviewForm.comment}
                 onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
                 placeholder="Ceritakan pengalamanmu dengan produk ini (opsional)..."
-                className="w-full px-6 py-4 rounded-[1.5rem] bg-white border border-gray-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-medium transition-all resize-none mb-5"
+                className="w-full px-6 py-4 rounded-[1.5rem] bg-white border border-oat focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-medium transition-all resize-none mb-5"
               />
               <button
                 type="submit"
@@ -480,21 +480,21 @@ export default function ProductDetail() {
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
             </div>
           ) : reviews.length === 0 ? (
-            <p className="text-sm text-gray-400 font-medium italic">Belum ada ulasan untuk produk ini. Jadilah yang pertama!</p>
+            <p className="text-sm text-secondary font-medium italic">Belum ada ulasan untuk produk ini. Jadilah yang pertama!</p>
           ) : (
             <div className="space-y-8">
               {reviews.map((review) => (
-                <div key={review.id} className="pb-8 border-b border-gray-50 last:border-0">
+                <div key={review.id} className="pb-8 border-b border-cream last:border-0">
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div>
-                      <p className="text-sm font-black text-gray-900">{review.reviewer_name}</p>
+                      <p className="text-sm font-black text-primary">{review.reviewer_name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex items-center">
                           {[1, 2, 3, 4, 5].map((n) => (
-                            <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} />
+                            <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? 'text-amber-400 fill-current' : 'text-oat fill-current'}`} />
                           ))}
                         </div>
-                        <span className="text-[10px] text-gray-400 font-medium">
+                        <span className="text-[10px] text-secondary font-medium">
                           {new Date(review.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
@@ -502,7 +502,7 @@ export default function ProductDetail() {
                     {(review.user_id === user?.id || isStaff(user?.user_metadata?.role)) && (
                       <button
                         onClick={() => handleDeleteReview(review.id)}
-                        className="p-2 text-gray-300 hover:text-rose-500 transition-colors flex-shrink-0"
+                        className="p-2 text-secondary-light hover:text-rose-500 transition-colors flex-shrink-0"
                         title="Hapus ulasan"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -510,7 +510,7 @@ export default function ProductDetail() {
                     )}
                   </div>
                   {review.comment && (
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed mt-2">{review.comment}</p>
+                    <p className="text-sm text-secondary font-medium leading-relaxed mt-2">{review.comment}</p>
                   )}
                 </div>
               ))}
