@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  X, 
-  Upload, 
-  XCircle, 
-  ArrowLeft, 
-  ArrowRight, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Upload,
+  XCircle,
+  ArrowLeft,
+  ArrowRight,
   Video,
   Package,
   Layers,
   Search,
   ChevronRight,
   Filter,
-  AlertCircle
+  AlertCircle,
+  Cloud
 } from 'lucide-react';
 import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile } from '../../services/api';
+import { pickFilesFromDrive } from '../../lib/googleDrivePicker';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -41,6 +43,7 @@ export default function Products() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompressingVideo, setIsCompressingVideo] = useState(false);
   const [compressionProgress, setCompressionProgress] = useState(0);
+  const [isImportingDrive, setIsImportingDrive] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -69,6 +72,25 @@ export default function Products() {
 
   const removeImage = (indexToRemove) => {
     setMediaItems(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleDriveImport = async () => {
+    setIsImportingDrive(true);
+    try {
+      const files = await pickFilesFromDrive({ multiple: true });
+      if (files.length > 0) {
+        const newItems = files.map(file => ({
+          isNew: true,
+          url: URL.createObjectURL(file),
+          file: file
+        }));
+        setMediaItems(prev => [...prev, ...newItems]);
+      }
+    } catch (err) {
+      alert('Gagal mengimpor dari Google Drive: ' + err.message);
+    } finally {
+      setIsImportingDrive(false);
+    }
   };
 
   const moveImage = (index, direction) => {
@@ -411,10 +433,21 @@ export default function Products() {
                     <label className="text-sm font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                        <Layers className="w-4 h-4 text-primary" /> Media & Galeri
                     </label>
-                    <label htmlFor="file-upload" className="text-xs font-bold text-primary hover:underline cursor-pointer">
-                      + Tambah Foto
-                      <input id="file-upload" type="file" multiple className="sr-only" accept="image/*" onChange={handleImageChange} />
-                    </label>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={handleDriveImport}
+                        disabled={isImportingDrive}
+                        className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-primary transition-colors disabled:opacity-50"
+                      >
+                        <Cloud className="w-3.5 h-3.5" />
+                        {isImportingDrive ? 'Membuka Drive...' : 'Import Drive'}
+                      </button>
+                      <label htmlFor="file-upload" className="text-xs font-bold text-primary hover:underline cursor-pointer">
+                        + Tambah Foto
+                        <input id="file-upload" type="file" multiple className="sr-only" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                    </div>
                   </div>
                   
                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth">

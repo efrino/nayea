@@ -671,3 +671,150 @@ SET raw_user_meta_data = jsonb_set(
   '"superadmin"'
 )
 WHERE email = 'efrinowep@gmail.com';
+
+-- ==============================================================================
+-- 9. ADMIN NOTIFICATIONS
+-- Server-side (trigger-driven) so notifications fire regardless of which
+-- client/API path caused the event. read_by tracks per-user read state
+-- without needing a separate join table (small admin team, low volume).
+-- ==============================================================================
+
+create table if not exists notifications (
+  id uuid default uuid_generate_v4() primary key,
+  category text not null check (category in ('order', 'message', 'stock', 'review', 'info')),
+  title text not null,
+  body text,
+  link_url text,
+  read_by uuid[] not null default '{}',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table notifications enable row level security;
+
+drop policy if exists "Staff can view notifications" on notifications;
+create policy "Staff can view notifications"
+on notifications for select
+using (public.is_staff());
+
+-- No direct insert policy: notifications are only ever created by the
+-- security-definer trigger functions below, never by client code.
+drop policy if exists "Staff can update notifications" on notifications;
+create policy "Staff can update notifications"
+on notifications for update
+using (public.is_staff())
+with check (public.is_staff());
+
+create or replace function public.push_notification(p_category text, p_title text, p_body text, p_link_url text)
+returns void as $$
+begin
+  insert into public.notifications (category, title, body, link_url)
+  values (p_category, p_title, p_body, p_link_url);
+end;
+$$ language plpgsql security definer;
+
+-- New order → notify (fires regardless of caller, since order insert is
+-- open to anonymous checkout and this function runs security definer)
+create or replace function public.notify_new_order()
+returns trigger as $$
+begin
+  perform public.push_notification(
+    'order',
+    'Pesanan Baru',
+    new.customer_name || ' — Rp ' || to_char(new.total_amount, 'FM999G999G999'),
+    '/admin/orders'
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_order_created_notify on orders;
+create trigger on_order_created_notify
+  after insert on orders
+  for each row execute procedure public.notify_new_order();
+
+-- New customer chat message → notify (skip admin's own outgoing messages)
+create or replace function public.notify_new_message()
+returns trigger as $$
+begin
+  if new.sender = 'customer' then
+    perform public.push_notification(
+      'message',
+      'Pesan Baru',
+      left(new.text, 100),
+      '/admin/chat'
+    );
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_message_created_notify on messages;
+create trigger on_message_created_notify
+  after insert on messages
+  for each row execute procedure public.notify_new_message();
+
+-- Stock crossing below threshold → notify once per crossing, not on every
+-- update while it stays low (checks old.stock was >= 5 before this update)
+create or replace function public.notify_low_stock()
+returns trigger as $$
+begin
+  if new.stock < 5 and (old.stock is distinct from new.stock) and (old.stock is null or old.stock >= 5) then
+    perform public.push_notification(
+      'stock',
+      'Stok Menipis',
+      new.name || ' tersisa ' || new.stock || ' pcs',
+      '/admin/products'
+    );
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_product_stock_low_notify on products;
+create trigger on_product_stock_low_notify
+  after update on products
+  for each row execute procedure public.notify_low_stock();
+
+-- New product review → notify
+create or replace function public.notify_new_review()
+returns trigger as $$
+declare
+  v_product_name text;
+begin
+  select name into v_product_name from public.products where id = new.product_id;
+  perform public.push_notification(
+    'review',
+    'Review Baru',
+    coalesce(v_product_name, 'Produk') || ' — ' || new.rating || '/5',
+    '/product/' || new.product_id
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_review_created_notify on reviews;
+create trigger on_review_created_notify
+  after insert on reviews
+  for each row execute procedure public.notify_new_review();
+
+-- Mark-read RPCs run as the calling user (security invoker, the default),
+-- so they're still gated by the "Staff can update notifications" policy above.
+create or replace function public.mark_notification_read(p_id uuid)
+returns void as $$
+begin
+  update public.notifications
+  set read_by = array_append(read_by, auth.uid())
+  where id = p_id and not (auth.uid() = any(read_by));
+end;
+$$ language plpgsql;
+
+create or replace function public.mark_all_notifications_read()
+returns void as $$
+begin
+  update public.notifications
+  set read_by = array_append(read_by, auth.uid())
+  where not (auth.uid() = any(read_by));
+end;
+$$ language plpgsql;
+
+alter publication supabase_realtime add table notifications;

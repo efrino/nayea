@@ -735,3 +735,26 @@ export async function sendShippingNotificationEmail(orderId) {
   });
   return { data, error };
 }
+
+// ==========================================
+// ADMIN NOTIFICATION SERVICES
+// ==========================================
+
+export async function getNotifications(limit = 50) {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return { data, error };
+}
+
+export async function markNotificationRead(id) {
+  const { error } = await supabase.rpc("mark_notification_read", { p_id: id });
+  return { error };
+}
+
+export async function markAllNotificationsRead() {
+  const { error } = await supabase.rpc("mark_all_notifications_read");
+  return { error };
+}

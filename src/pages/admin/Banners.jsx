@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Upload, Video, Image, ExternalLink, Eye, EyeOff, Layers } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Upload, Video, Image, ExternalLink, Eye, EyeOff, Layers, Cloud } from 'lucide-react';
 import { getBanners, createBanner, updateBanner, deleteBanner, uploadFile } from '../../services/api';
+import { pickFilesFromDrive } from '../../lib/googleDrivePicker';
 
 const isVideoUrl = (url) => {
   if (!url) return false;
@@ -67,8 +68,7 @@ export default function Banners() {
     setFormData({ id: null, title: '', description: '', tag_label: '', image_url: '', link_url: '', active: true });
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+  const processAndUploadFile = async (file) => {
     if (!file) return;
     const isVideo = file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.gif');
     const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
@@ -97,7 +97,22 @@ export default function Banners() {
     const { url, error } = await uploadFile(fileToUpload, 'banners');
     setUploading(false);
     if (error) alert("Gagal mengupload media: " + error.message);
-    else if (url) setFormData({ ...formData, image_url: url });
+    else if (url) setFormData(prev => ({ ...prev, image_url: url }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    processAndUploadFile(file);
+  };
+
+  const handleDriveImport = async () => {
+    try {
+      const files = await pickFilesFromDrive({ multiple: false });
+      if (files.length > 0) await processAndUploadFile(files[0]);
+    } catch (err) {
+      alert('Gagal mengimpor dari Google Drive: ' + err.message);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -241,6 +256,15 @@ export default function Banners() {
                   )}
                   <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} disabled={uploading || isCompressingVideo} />
                   {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><p className="text-primary font-black animate-pulse">UPLOADING...</p></div>}
+                  {!uploading && !isCompressingVideo && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDriveImport(); }}
+                      className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-4 py-2 bg-white/95 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 shadow-lg hover:text-primary transition-colors"
+                    >
+                      <Cloud className="w-3.5 h-3.5" /> Import Drive
+                    </button>
+                  )}
                   {isCompressingVideo && (
                      <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-2 px-8">
                         <p className="text-blue-600 font-black text-sm">MENGOMPRESI VIDEO... {compressionProgress}%</p>
