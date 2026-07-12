@@ -90,10 +90,15 @@ async function getAccessToken() {
   });
 }
 
-async function downloadDriveFile(fileId, accessToken, fileName, mimeType) {
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+async function downloadDriveFile(fileId, accessToken, fileName, mimeType, resourceKey) {
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  // Files living in a folder shared with the admin (rather than owned by
+  // them) often require their resourceKey — omitting it returns a
+  // confusing 404 instead of a 403. Picker gives us this on doc.resourceKey.
+  if (resourceKey) {
+    headers['X-Goog-Drive-Resource-Keys'] = `${fileId}/${resourceKey}`;
+  }
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers });
   if (!res.ok) {
     throw new Error(`Gagal mengunduh "${fileName}" dari Google Drive (HTTP ${res.status}).`);
   }
@@ -133,7 +138,7 @@ export async function pickFilesFromDrive({ multiple = true } = {}) {
         try {
           const docs = data.docs || [];
           const files = await Promise.all(
-            docs.map((doc) => downloadDriveFile(doc.id, accessToken, doc.name, doc.mimeType))
+            docs.map((doc) => downloadDriveFile(doc.id, accessToken, doc.name, doc.mimeType, doc.resourceKey))
           );
           resolve(files);
         } catch (err) {

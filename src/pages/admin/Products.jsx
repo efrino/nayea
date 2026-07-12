@@ -78,13 +78,25 @@ export default function Products() {
     setIsImportingDrive(true);
     try {
       const files = await pickFilesFromDrive({ multiple: true });
-      if (files.length > 0) {
-        const newItems = files.map(file => ({
+      if (files.length === 0) return;
+
+      const images = files.filter(file => !file.type.startsWith('video/'));
+      const videos = files.filter(file => file.type.startsWith('video/'));
+
+      if (images.length > 0) {
+        const newItems = images.map(file => ({
           isNew: true,
           url: URL.createObjectURL(file),
           file: file
         }));
         setMediaItems(prev => [...prev, ...newItems]);
+      }
+
+      if (videos.length > 0) {
+        if (videos.length > 1) {
+          alert(`Hanya 1 video yang didukung per produk. Memakai "${videos[0].name}", sisanya diabaikan.`);
+        }
+        await processVideoFile(videos[0]);
       }
     } catch (err) {
       alert('Gagal mengimpor dari Google Drive: ' + err.message);
@@ -104,10 +116,7 @@ export default function Products() {
     }
   };
 
-  const handleVideoChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  const processVideoFile = async (file) => {
     const { COMPRESSION_THRESHOLD_BYTES } = await import('../../lib/videoCompression');
 
     if (file.size <= COMPRESSION_THRESHOLD_BYTES) {
@@ -126,6 +135,12 @@ export default function Products() {
     } finally {
       setIsCompressingVideo(false);
     }
+  };
+
+  const handleVideoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await processVideoFile(file);
   };
 
   const removeVideo = () => {
