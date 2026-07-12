@@ -71,6 +71,14 @@ export default function Home() {
       />
       {/* Hero Section */}
       <section className="relative group overflow-hidden min-h-[70vh] lg:min-h-[90vh]">
+        {loading ? (
+          // Neutral skeleton while banners/products are still loading — avoids
+          // flashing the hardcoded "Modern & Modesty" fallback before we know
+          // whether real banners actually exist, which reads as a glitch on
+          // slow connections.
+          <div className="absolute inset-0 bg-gradient-to-br from-oat via-cream to-oat animate-pulse" />
+        ) : (
+        <>
         <div className="absolute inset-0 transition-all duration-1000">
           {isVideoUrl(activeBannerImage) ? (
             <video
@@ -191,6 +199,8 @@ export default function Home() {
               />
             ))}
           </div>
+        )}
+        </>
         )}
       </section>
 
