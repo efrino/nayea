@@ -75,7 +75,7 @@ async function runCompression(file, onProgress) {
     await ffmpeg.exec([
       '-i', inputName,
       '-c:v', 'libx264',
-      '-preset', 'medium',
+      '-preset', 'veryfast',
       '-crf', '28',
       '-vf', "scale='min(1280,iw)':-2",
       '-c:a', 'aac',
