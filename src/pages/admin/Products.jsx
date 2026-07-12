@@ -36,9 +36,11 @@ export default function Products() {
   const [videoUrl, setVideoUrl] = useState('');
   const [colors, setColors] = useState([]);
   const [newColor, setNewColor] = useState('');
-  const [mediaItems, setMediaItems] = useState([]); 
+  const [mediaItems, setMediaItems] = useState([]);
   const [videoFile, setVideoFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressingVideo, setIsCompressingVideo] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState(0);
 
   useEffect(() => {
     fetchProducts();
@@ -80,11 +82,27 @@ export default function Products() {
     }
   };
 
-  const handleVideoChange = (e) => {
+  const handleVideoChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    const { COMPRESSION_THRESHOLD_BYTES } = await import('../../lib/videoCompression');
+
+    if (file.size <= COMPRESSION_THRESHOLD_BYTES) {
       setVideoFile(file);
       setVideoUrl(URL.createObjectURL(file));
+      return;
+    }
+
+    setIsCompressingVideo(true);
+    setCompressionProgress(0);
+    try {
+      const { compressVideo } = await import('../../lib/videoCompression');
+      const compressed = await compressVideo(file, setCompressionProgress);
+      setVideoFile(compressed);
+      setVideoUrl(URL.createObjectURL(compressed));
+    } finally {
+      setIsCompressingVideo(false);
     }
   };
 
@@ -541,7 +559,17 @@ export default function Products() {
 
                   <div className="space-y-4">
                      <label className="text-xs font-black uppercase tracking-widest text-gray-400">Video Produk (MP4/WEBM)</label>
-                     {videoUrl ? (
+                     {isCompressingVideo ? (
+                        <div className="p-6 rounded-2xl bg-blue-50 border border-blue-100 space-y-3">
+                           <div className="flex items-center gap-2 text-blue-700 text-xs font-bold">
+                              <Video className="w-4 h-4 animate-pulse" /> <span>Mengompresi video... {compressionProgress}%</span>
+                           </div>
+                           <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${compressionProgress}%` }} />
+                           </div>
+                           <p className="text-[10px] text-blue-400 font-medium">Video besar dikompres otomatis dulu sebelum diupload, mohon tunggu.</p>
+                        </div>
+                     ) : videoUrl ? (
                         <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 italic">
                            <div className="flex items-center gap-2 text-emerald-700 text-xs">
                               <Video className="w-4 h-4" /> <span>Video Terpilih</span>
@@ -567,12 +595,12 @@ export default function Products() {
                   >
                     Batal
                   </button>
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting} 
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || isCompressingVideo}
                     className="flex-[2] py-4 rounded-2xl gradient-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/30 hover:shadow-2xl hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50"
                   >
-                    {isSubmitting ? 'MENYIMPAN...' : editId ? 'PERBARUI PRODUK' : 'SIMPAN PRODUK'}
+                    {isSubmitting ? 'MENYIMPAN...' : isCompressingVideo ? 'MENGOMPRESI VIDEO...' : editId ? 'PERBARUI PRODUK' : 'SIMPAN PRODUK'}
                   </button>
                 </div>
               </form>

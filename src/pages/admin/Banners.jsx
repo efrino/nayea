@@ -13,6 +13,8 @@ export default function Banners() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isCompressingVideo, setIsCompressingVideo] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState(0);
   const [formData, setFormData] = useState({
     id: null,
     title: '',
@@ -70,12 +72,29 @@ export default function Banners() {
     if (!file) return;
     const isVideo = file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.gif');
     const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+
+    let fileToUpload = file;
+
+    if (file.type.startsWith('video/')) {
+      const { COMPRESSION_THRESHOLD_BYTES } = await import('../../lib/videoCompression');
+      if (file.size > COMPRESSION_THRESHOLD_BYTES) {
+        setIsCompressingVideo(true);
+        setCompressionProgress(0);
+        try {
+          const { compressVideo } = await import('../../lib/videoCompression');
+          fileToUpload = await compressVideo(file, setCompressionProgress);
+        } finally {
+          setIsCompressingVideo(false);
+        }
+      }
+    }
+
+    if (fileToUpload.size > maxSize) {
       alert(`Ukuran file terlalu besar. Maksimal ${isVideo ? '50MB untuk video' : '5MB untuk gambar'}.`);
       return;
     }
     setUploading(true);
-    const { url, error } = await uploadFile(file, 'banners');
+    const { url, error } = await uploadFile(fileToUpload, 'banners');
     setUploading(false);
     if (error) alert("Gagal mengupload media: " + error.message);
     else if (url) setFormData({ ...formData, image_url: url });
@@ -220,8 +239,16 @@ export default function Banners() {
                         <p className="text-xs font-black uppercase tracking-widest text-gray-400">Pilih JPG / Video MP4</p>
                      </div>
                   )}
-                  <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} disabled={uploading} />
+                  <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} disabled={uploading || isCompressingVideo} />
                   {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><p className="text-primary font-black animate-pulse">UPLOADING...</p></div>}
+                  {isCompressingVideo && (
+                     <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-2 px-8">
+                        <p className="text-blue-600 font-black text-sm">MENGOMPRESI VIDEO... {compressionProgress}%</p>
+                        <div className="w-full max-w-xs h-2 bg-blue-100 rounded-full overflow-hidden">
+                           <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${compressionProgress}%` }} />
+                        </div>
+                     </div>
+                  )}
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -247,7 +274,7 @@ export default function Banners() {
 
                <div className="flex items-center gap-3">
                   <button type="button" onClick={handleCloseModal} className="flex-1 py-4 bg-gray-50 text-gray-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-gray-100 transition-all">Tutup</button>
-                  <button type="submit" disabled={uploading || !formData.image_url} className="flex-[2] py-4 gradient-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 hover:shadow-2xl active:scale-95 transition-all">Simpan Perubahan</button>
+                  <button type="submit" disabled={uploading || isCompressingVideo || !formData.image_url} className="flex-[2] py-4 gradient-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 hover:shadow-2xl active:scale-95 transition-all">Simpan Perubahan</button>
                </div>
             </form>
           </div>
