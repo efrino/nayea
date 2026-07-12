@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, Trash2, ShoppingBag, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getWishlists, toggleWishlist } from '../../services/api';
+import ProductCardSkeleton from '../../components/ProductCardSkeleton';
 
 export default function Wishlist() {
     const { session, openLoginModal } = useAuth();
@@ -83,8 +84,8 @@ export default function Wishlist() {
                 </h1>
 
                 {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[...Array(4)].map((_, i) => <ProductCardSkeleton key={i} />)}
                     </div>
                 ) : wishlistItems.length === 0 ? (
                     <div className="bg-white rounded-[3rem] shadow-sm p-12 text-center border border-oat">

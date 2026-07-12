@@ -207,8 +207,27 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="bg-cream min-h-screen py-32 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="bg-cream min-h-screen py-10 sm:py-16">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 animate-pulse">
+          <div className="h-4 w-40 bg-oat rounded-full mb-12 sm:mb-16" />
+          <div className="lg:grid lg:grid-cols-2 lg:gap-x-16 xl:gap-x-24">
+            <div className="flex flex-col gap-6">
+              <div className="w-full bg-oat rounded-[3rem] aspect-[4/5] sm:aspect-square lg:aspect-[4/5]" />
+              <div className="flex gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-24 w-24 flex-shrink-0 rounded-[1.5rem] bg-oat" />
+                ))}
+              </div>
+            </div>
+            <div className="mt-10 lg:mt-0 space-y-6">
+              <div className="h-3 w-24 bg-oat rounded-full" />
+              <div className="h-10 w-3/4 bg-oat rounded-2xl" />
+              <div className="h-6 w-1/3 bg-oat rounded-full" />
+              <div className="h-24 w-full bg-oat rounded-2xl" />
+              <div className="h-14 w-full bg-oat rounded-[1.5rem]" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

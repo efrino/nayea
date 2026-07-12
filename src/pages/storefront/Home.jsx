@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag, ChevronLeft, ChevronRight, Package, CheckCircle2, X } from 'lucide-react';
 import { getProducts, getBanners } from '../../services/api';
 import SEO from '../../components/SEO';
+import ProductCardSkeleton from '../../components/ProductCardSkeleton';
 
 // Check if the URL is an HTML5 video format that needs a <video> tag to loop
 const isVideoUrl = (url) => {
@@ -218,11 +219,8 @@ export default function Home() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center py-32">
-               <div className="relative">
-                  <div className="w-16 h-16 border-4 border-oat rounded-full" />
-                  <div className="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-               </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[...Array(4)].map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : featuredProducts.length === 0 ? (
             <div className="text-center py-32 bg-cream rounded-[3rem] border border-oat">
