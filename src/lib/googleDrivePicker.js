@@ -172,10 +172,12 @@ export async function pickDriveDocumentLinks({ multiple = true } = {}) {
       .setOAuthToken(accessToken)
       .setDeveloperKey(API_KEY)
       .setCallback((data) => {
-        if (data.action !== window.google.picker.Action.PICKED) {
+        if (data.action === window.google.picker.Action.CANCEL) {
           resolve([]);
           return;
         }
+        if (data.action !== window.google.picker.Action.PICKED) return;
+
         const docs = (data.docs || []).map((doc) => ({
           title: doc.name,
           url: doc.url,
