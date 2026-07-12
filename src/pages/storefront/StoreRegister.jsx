@@ -40,6 +40,10 @@ export default function StoreRegister() {
 
         if (error) {
             setError(error.message);
+        } else if (data?.user?.identities?.length === 0) {
+            // Supabase returns a "successful" response with no error and no new identity
+            // when the email is already registered (anti-enumeration behavior) — detect it explicitly.
+            setError('Email ini sudah terdaftar. Silakan login, atau gunakan "Lupa Password" jika Anda lupa kata sandi.');
         } else {
             if (data?.session) {
                 setSuccessMsg('Pendaftaran berhasil! Mengalihkan ke beranda...');

@@ -8,6 +8,8 @@ export default function StoreLogin() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [unconfirmed, setUnconfirmed] = useState(false);
+    const [resendMsg, setResendMsg] = useState('');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const showResetSuccess = searchParams.get('reset') === 'success';
@@ -24,17 +26,36 @@ export default function StoreLogin() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setUnconfirmed(false);
+        setResendMsg('');
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
             if (error.message.includes('Email not confirmed')) {
                 setError('Email belum dikonfirmasi. Silakan periksa kotak masuk email Anda dan klik tautan verifikasi sebelum login.');
+                setUnconfirmed(true);
             } else {
                 setError(error.message);
             }
         } else {
             navigate('/');
+        }
+        setLoading(false);
+    };
+
+    const handleResendVerification = async () => {
+        if (!email) {
+            setError('Masukkan email Anda terlebih dahulu, lalu klik "Kirim ulang email verifikasi".');
+            return;
+        }
+        setLoading(true);
+        setResendMsg('');
+        const { error } = await supabase.auth.resend({ type: 'signup', email });
+        if (error) {
+            setError(error.message);
+        } else {
+            setResendMsg('Email verifikasi telah dikirim ulang. Cek juga folder spam.');
         }
         setLoading(false);
     };
@@ -86,8 +107,24 @@ export default function StoreLogin() {
                             </div>
                         )}
                         {error && (
-                            <div className="bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                            <div className="bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl animate-in fade-in slide-in-from-top-2 space-y-3">
                                 <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest italic leading-relaxed">{error}</p>
+                                {unconfirmed && (
+                                    <button
+                                        type="button"
+                                        onClick={handleResendVerification}
+                                        disabled={loading}
+                                        className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline italic disabled:opacity-50"
+                                    >
+                                        Kirim ulang email verifikasi
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {resendMsg && (
+                            <div className="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest italic leading-relaxed">{resendMsg}</p>
                             </div>
                         )}
 
