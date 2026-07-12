@@ -61,8 +61,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-100 mt-14 pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] font-black text-gray-300 uppercase tracking-widest italic">
+        <div className="border-t border-gray-100 mt-14 pt-8 flex flex-col md:flex-row gap-4 justify-between items-center text-[10px] font-black text-gray-300 uppercase tracking-widest italic">
           <p>&copy; {new Date().getFullYear()} Nayea.id. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <Link to="/privacy-policy" className="hover:text-primary transition-colors">Kebijakan Privasi</Link>
+            <Link to="/terms-conditions" className="hover:text-primary transition-colors">Syarat &amp; Ketentuan</Link>
+          </div>
         </div>
       </div>
     </footer>

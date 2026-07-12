@@ -358,8 +358,16 @@ export async function createOrder(orderData, cartItems) {
 
     if (itemsError) throw itemsError;
 
-    // Optional: Kita bisa menambahkan logika untuk UPDATE stock product di sini
-    // dengan memanggil RPC atau fungsi updateProduct secara batch.
+    // 4. Kurangi stok produk (RPC, atomic di sisi DB supaya aman dari race
+    // condition kalau ada beberapa checkout bersamaan untuk produk yang sama)
+    await Promise.all(
+      cartItems.map((item) =>
+        supabase.rpc("decrement_product_stock", {
+          p_id: item.product_id,
+          qty: item.quantity,
+        })
+      )
+    );
 
     return { data: order, error: null };
   } catch (error) {

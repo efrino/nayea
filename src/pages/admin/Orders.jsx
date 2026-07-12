@@ -5,7 +5,8 @@ import {
   Search,
   ChevronRight,
   User,
-  Clock
+  Clock,
+  Truck
 } from 'lucide-react';
 import { getOrders } from '../../services/api';
 import { supabase } from '../../lib/supabase';
@@ -15,6 +16,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [trackingDrafts, setTrackingDrafts] = useState({});
 
   useEffect(() => {
     fetchOrders();
@@ -52,6 +54,20 @@ export default function Orders() {
       // fetchOrders is called via realtime channel
     } catch (err) {
       alert("Gagal memperbarui status: " + err.message);
+    }
+  };
+
+  const handleSaveTracking = async (id) => {
+    const value = trackingDrafts[id]?.trim();
+    if (!value) return;
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ tracking_number: value })
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      alert("Gagal menyimpan nomor resi: " + err.message);
     }
   };
 
@@ -216,7 +232,28 @@ export default function Orders() {
                          <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 opacity-40 pointer-events-none" />
                       </div>
                    </div>
-                   
+
+                   <div className="space-y-3 px-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5">
+                         <Truck className="w-3.5 h-3.5" /> Nomor Resi
+                      </p>
+                      <div className="flex items-center gap-2">
+                         <input
+                            type="text"
+                            defaultValue={order.tracking_number || ''}
+                            onChange={(e) => setTrackingDrafts((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                            placeholder="Belum diisi"
+                            className="w-full px-4 py-3 rounded-xl text-xs font-bold border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                         />
+                         <button
+                            onClick={() => handleSaveTracking(order.id)}
+                            className="px-4 py-3 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-black active:scale-95 transition-all flex-shrink-0"
+                         >
+                            Simpan
+                         </button>
+                      </div>
+                   </div>
+
                    <div className="pt-2 px-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Grand Total</p>
                       <p className="text-xl font-black text-emerald-600">{formatPrice(order.total_amount)}</p>

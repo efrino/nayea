@@ -12,6 +12,7 @@ import {
   X,
   ShoppingBag,
   LogOut,
+  Truck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -226,6 +227,16 @@ function OrdersTab({ userId }) {
               </div>
             ))}
           </div>
+
+          {order.tracking_number && (
+            <div className="mt-6 pt-6 border-t border-gray-50 flex items-center gap-3">
+              <Truck className="w-4 h-4 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nomor Resi</p>
+                <p className="text-sm font-black text-gray-900">{order.tracking_number}</p>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>

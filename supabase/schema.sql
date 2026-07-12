@@ -73,6 +73,10 @@ create table if not exists orders (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Phase 17: Nomor resi pengiriman, diisi admin saat status order jadi 'shipped'
+alter table orders
+  add column if not exists tracking_number text;
+
 -- Table: order_items
 create table if not exists order_items (
   id uuid default uuid_generate_v4() primary key,
@@ -419,6 +423,18 @@ using ( bucket_id = 'banners' AND auth.role() = 'authenticated' );
 -- ==============================================================================
 -- 7. POSTGRES FUNCTIONS (RPC)
 -- ==============================================================================
+
+-- Kurangi stok produk secara atomic saat checkout (dipanggil dari createOrder
+-- di src/services/api.js). security definer + clamp ke 0 supaya stok tidak
+-- pernah negatif walau ada race condition antar checkout bersamaan.
+create or replace function public.decrement_product_stock(p_id uuid, qty integer)
+returns void as $$
+begin
+  update products
+  set stock = greatest(stock - qty, 0)
+  where id = p_id;
+end;
+$$ language plpgsql security definer;
 
 -- Function to fetch messages joined with user metadata (safe way to read auth.users)
 create or replace function get_chat_messages_with_users()

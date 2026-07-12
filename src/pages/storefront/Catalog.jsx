@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Search, X } from 'lucide-react';
 import { getProducts } from '../../services/api';
 
 export default function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeFilter = searchParams.get('filter') || 'all';
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,12 +23,23 @@ export default function Catalog() {
   }, []);
 
   const setFilter = (value) => {
-    setSearchParams(value === 'all' ? {} : { filter: value });
+    const next = new URLSearchParams(searchParams);
+    if (value === 'all') next.delete('filter');
+    else next.set('filter', value);
+    setSearchParams(next);
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set('q', value);
+    else next.delete('q');
+    setSearchParams(next, { replace: true });
   };
 
   const filteredProducts = products.filter(product => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'preorder') return product.is_preorder;
+    if (activeFilter === 'preorder' && !product.is_preorder) return false;
+    if (searchTerm && !product.name?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
 
@@ -43,9 +55,24 @@ export default function Catalog() {
             <p className="mt-4 text-gray-400 font-bold uppercase tracking-widest text-[10px] italic">Discover {filteredProducts.length} curated pieces</p>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-4 md:pb-0 hide-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0">
-             <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-[1.8rem] border border-gray-100">
+          {/* Search + Filters */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+             <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Cari produk..."
+                  className="w-full pl-11 pr-9 py-3 rounded-[1.5rem] bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-xs font-bold text-gray-900 placeholder-gray-300 transition-all"
+                />
+                {searchTerm && (
+                  <button onClick={() => handleSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-gray-900 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+             </div>
+             <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-[1.8rem] border border-gray-100 overflow-x-auto hide-scrollbar">
                <FilterButton active={activeFilter === 'all'} onClick={() => setFilter('all')}>ALL PIECES</FilterButton>
                <FilterButton active={activeFilter === 'preorder'} onClick={() => setFilter('preorder')}>PRE-ORDER</FilterButton>
              </div>
@@ -62,7 +89,7 @@ export default function Catalog() {
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-32 bg-gray-50 rounded-[4rem] border border-gray-100">
             <p className="text-gray-400 font-bold uppercase tracking-widest text-xs italic">No items found in this category.</p>
-            <button onClick={() => setFilter('all')} className="mt-6 text-primary font-black uppercase tracking-widest text-[10px] hover:underline">
+            <button onClick={() => { setFilter('all'); handleSearchChange(''); }} className="mt-6 text-primary font-black uppercase tracking-widest text-[10px] hover:underline">
               CLEAR SELECTIONS
             </button>
           </div>
