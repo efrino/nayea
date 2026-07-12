@@ -104,7 +104,8 @@ export default function InvoiceView() {
           </div>
         </div>
 
-        <table className="w-full mb-8">
+        <div className="overflow-x-auto mb-8 print:overflow-visible">
+        <table className="w-full min-w-[480px] print:min-w-0">
           <thead>
             <tr className="border-b-2 border-gray-900 text-left">
               <th className="py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Produk</th>
@@ -126,6 +127,7 @@ export default function InvoiceView() {
             ))}
           </tbody>
         </table>
+        </div>
 
         <div className="flex justify-end mb-10">
           <div className="w-full max-w-xs space-y-2">
