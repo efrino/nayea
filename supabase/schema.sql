@@ -470,8 +470,17 @@ create trigger on_auth_user_created
   before insert on auth.users
   for each row execute procedure public.on_auth_user_created();
 
--- Enable Realtime for messages table
-alter publication supabase_realtime add table messages;
+-- Enable Realtime for messages table (idempotent — ALTER PUBLICATION ... ADD TABLE
+-- has no "IF NOT EXISTS" and errors on re-run otherwise)
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'messages'
+  ) then
+    alter publication supabase_realtime add table messages;
+  end if;
+end $$;
 
 
 -- 6. BANNERS STORAGE BUCKET
@@ -817,7 +826,15 @@ begin
 end;
 $$ language plpgsql;
 
-alter publication supabase_realtime add table notifications;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table notifications;
+  end if;
+end $$;
 
 -- ==============================================================================
 -- 10. ADMIN DOCUMENT BOOKMARKS
