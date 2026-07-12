@@ -1,8 +1,10 @@
 import { MapPin, Phone, Mail, Instagram, MessageCircle } from 'lucide-react';
+import SEO from '../../components/SEO';
 
 export default function Contact() {
   return (
     <div className="bg-white min-h-screen py-16 sm:py-24">
+      <SEO title="Hubungi Kami" description="Hubungi Nayea.id lewat WhatsApp, email, Instagram, atau live chat untuk pertanyaan produk dan pesanan." />
       <div className="max-w-4xl mx-auto px-6 sm:px-8">
         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Get In Touch</span>
         <h1 className="text-5xl sm:text-6xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-12">

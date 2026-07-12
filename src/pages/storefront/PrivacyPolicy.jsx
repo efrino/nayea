@@ -1,6 +1,9 @@
+import SEO from '../../components/SEO';
+
 export default function PrivacyPolicy() {
   return (
     <div className="bg-white min-h-screen py-16 sm:py-24">
+      <SEO title="Kebijakan Privasi" description="Kebijakan privasi Nayea.id — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi pelanggan." />
       <div className="max-w-3xl mx-auto px-6 sm:px-8">
         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Legal</span>
         <h1 className="text-5xl sm:text-6xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-4">

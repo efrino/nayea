@@ -1,8 +1,10 @@
 import { Truck, PackageCheck, RotateCcw } from 'lucide-react';
+import SEO from '../../components/SEO';
 
 export default function Shipping() {
   return (
     <div className="bg-white min-h-screen py-16 sm:py-24">
+      <SEO title="Pengiriman & Pengembalian" description="Info pengiriman, estimasi produk pre-order, dan kebijakan penukaran/pengembalian barang di Nayea.id." />
       <div className="max-w-4xl mx-auto px-6 sm:px-8">
         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Support</span>
         <h1 className="text-5xl sm:text-6xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-12">

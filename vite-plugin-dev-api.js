@@ -49,12 +49,16 @@ export default function devApiPlugin() {
           }
         }
 
-        // Vercel gives handlers res.status()/res.json() helpers that don't
-        // exist on a plain Node ServerResponse — shim them here.
+        // Vercel gives handlers res.status()/res.json()/res.send() helpers
+        // that don't exist on a plain Node ServerResponse — shim them here.
         res.status = (code) => { res.statusCode = code; return res; };
         res.json = (body) => {
           res.setHeader('Content-Type', 'application/json; charset=utf-8');
           res.end(JSON.stringify(body));
+          return res;
+        };
+        res.send = (body) => {
+          res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
           return res;
         };
 

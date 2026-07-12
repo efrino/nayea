@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag, ChevronLeft, ChevronRight, Package, CheckCircle2, X } from 'lucide-react';
 import { getProducts, getBanners } from '../../services/api';
+import SEO from '../../components/SEO';
 
 // Check if the URL is an HTML5 video format that needs a <video> tag to loop
 const isVideoUrl = (url) => {
@@ -64,6 +65,10 @@ export default function Home() {
 
   return (
     <div className="bg-white">
+      <SEO
+        title="Modern & Modesty"
+        description="Nayea.id — kerudung dan modest fashion premium untuk perempuan modern. Belanja koleksi terbaru dengan bahan berkualitas, kirim ke seluruh Indonesia."
+      />
       {/* Hero Section */}
       <section className="relative group overflow-hidden min-h-[70vh] lg:min-h-[90vh]">
         <div className="absolute inset-0 transition-all duration-1000">

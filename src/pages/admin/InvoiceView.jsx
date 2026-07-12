@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Printer, ArrowLeft } from 'lucide-react';
 import { getOrderById } from '../../services/api';
+import SEO from '../../components/SEO';
 
 const STATUS_LABEL = {
   pending: 'MENUNGGU PEMBAYARAN',
@@ -51,6 +52,7 @@ export default function InvoiceView() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 print:bg-white print:py-0">
+      <SEO title="Invoice" noindex />
       {/* Toolbar — hidden when printing */}
       <div className="max-w-3xl mx-auto px-6 mb-6 flex items-center justify-between print:hidden">
         <Link to="/admin/orders" className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors">

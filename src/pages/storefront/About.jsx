@@ -1,8 +1,10 @@
 import { Package, Sparkles, Heart } from 'lucide-react';
+import SEO from '../../components/SEO';
 
 export default function About() {
   return (
     <div className="bg-white min-h-screen py-16 sm:py-24">
+      <SEO title="Tentang Kami" description="Kenali Nayea.id — brand kerudung dan modest fashion premium yang mengutamakan kualitas bahan dan kenyamanan untuk perempuan modern." />
       <div className="max-w-4xl mx-auto px-6 sm:px-8">
         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Our Story</span>
         <h1 className="text-5xl sm:text-7xl font-black font-heading text-gray-900 tracking-tighter italic uppercase leading-[0.95] mb-10">

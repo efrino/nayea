@@ -13,6 +13,7 @@ import {
   createReview,
   deleteReview,
 } from '../../services/api';
+import SEO from '../../components/SEO';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -225,6 +226,11 @@ export default function ProductDetail() {
 
   return (
     <div className="bg-white min-h-screen py-10 sm:py-16 relative">
+      <SEO
+        title={product.name}
+        description={product.description?.slice(0, 160) || `${product.name} — kerudung dan modest fashion premium dari Nayea.id. Rp ${product.price.toLocaleString('id-ID')}.`}
+        image={product.image_url || (product.images && product.images[0])}
+      />
       <div className="max-w-7xl mx-auto px-6 sm:px-8">
 
         {/* Toast Notification */}

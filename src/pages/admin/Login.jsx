@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/roles';
+import SEO from '../../components/SEO';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -51,6 +52,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <SEO title="Admin Login" noindex />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="mx-auto h-12 w-12 bg-primary rounded-xl flex items-center justify-center">
           <Lock className="h-6 w-6 text-white" />

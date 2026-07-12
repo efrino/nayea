@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ShoppingBag, Search, X } from 'lucide-react';
 import { getProducts } from '../../services/api';
+import SEO from '../../components/SEO';
 
 export default function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +46,10 @@ export default function Catalog() {
 
   return (
     <div className="bg-white min-h-screen py-16 sm:py-24">
+      <SEO
+        title="Katalog Produk"
+        description="Jelajahi koleksi lengkap kerudung dan modest fashion Nayea.id — ready stock maupun pre-order, kualitas premium untuk perempuan modern."
+      />
       <div className="max-w-7xl mx-auto px-6 sm:px-8">
 
         {/* Header */}
