@@ -53,6 +53,7 @@ supabase/       — schema.sql (tables + RLS policies), functions/shipping (Edge
 File `.env`, `.env.local`, `supabase/.env` sudah di-`.gitignore`. Variabel yang dipakai:
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` — lihat [.env.example](.env.example)
 - `SUPABASE_SERVICE_ROLE_KEY` — **jangan pernah** prefix `VITE_` (bakal ke-bundle ke client). Dipakai server-side saja di `api/admin-list-users.js` dan `api/admin-set-role.js` untuk fitur Manajemen User (superadmin-only).
+- `RESEND_API_KEY` — server-only, dipakai di `api/send-order-confirmation.js` dan `api/send-shipping-notification.js`. Opsional: kalau kosong, kedua endpoint itu no-op (`sent:false`) alih-alih error, jadi email notifikasi sifatnya opt-in.
 - Kredensial shipping API (RajaOngkir/sejenis) dipakai di `api/shipping-*.js` — cek `.env` lokal, jangan expose ke client bundle.
 
 Kalau menambah env var baru: tambahkan juga ke `.env.example` (tanpa isi asli) supaya orang lain tahu apa yang dibutuhkan.

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Truck, MapPin, Search, Tag, X, CheckCircle } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder, validateVoucher } from '../../services/api';
+import { createOrder, validateVoucher, sendOrderConfirmationEmail } from '../../services/api';
 import { searchDestination, getShippingRates } from '../../services/shipping';
 
 export default function Checkout() {
@@ -177,8 +177,13 @@ export default function Checkout() {
         discount_amount:  discount,
       };
 
-      const { error } = await createOrder(orderData, cartItems);
+      const { data: newOrder, error } = await createOrder(orderData, cartItems);
       if (error) throw error;
+
+      // Best-effort — never block the success screen on the email send.
+      if (newOrder?.id) {
+        sendOrderConfirmationEmail(newOrder.id).catch(() => {});
+      }
 
       clearCart();
       setIsSuccess(true);

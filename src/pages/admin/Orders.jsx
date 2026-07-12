@@ -10,7 +10,7 @@ import {
   Truck,
   FileText
 } from 'lucide-react';
-import { getOrders } from '../../services/api';
+import { getOrders, sendShippingNotificationEmail } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 
 export default function Orders() {
@@ -68,6 +68,9 @@ export default function Orders() {
         .update({ tracking_number: value })
         .eq('id', id);
       if (error) throw error;
+
+      // Best-effort — never block the UI on the email send.
+      sendShippingNotificationEmail(id).catch(() => {});
     } catch (err) {
       alert("Gagal menyimpan nomor resi: " + err.message);
     }

@@ -711,3 +711,27 @@ export async function deleteVoucher(id) {
   const { error } = await supabase.from("vouchers").delete().eq("id", id);
   return { error };
 }
+
+// ==========================================
+// EMAIL NOTIFICATION SERVICES
+// Best-effort: failures here should never block the checkout/order-update
+// flow that triggered them, so callers generally shouldn't await + throw.
+// ==========================================
+
+export async function sendOrderConfirmationEmail(orderId) {
+  const { data, error } = await authorizedFetch("/api/send-order-confirmation", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderId }),
+  });
+  return { data, error };
+}
+
+export async function sendShippingNotificationEmail(orderId) {
+  const { data, error } = await authorizedFetch("/api/send-shipping-notification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderId }),
+  });
+  return { data, error };
+}
