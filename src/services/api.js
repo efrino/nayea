@@ -257,6 +257,19 @@ export async function getOrders() {
 }
 
 /**
+ * Satu pesanan lengkap (dipakai di halaman Invoice admin)
+ */
+export async function getOrderById(id) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, order_items(*, product:products(*))")
+    .eq("id", id)
+    .single();
+
+  return { data, error };
+}
+
+/**
  * Riwayat pesanan milik satu customer saja (dipakai di halaman Profil)
  */
 export async function getMyOrders(userId) {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ShoppingBag,
   Package,
@@ -6,7 +7,8 @@ import {
   ChevronRight,
   User,
   Clock,
-  Truck
+  Truck,
+  FileText
 } from 'lucide-react';
 import { getOrders } from '../../services/api';
 import { supabase } from '../../lib/supabase';
@@ -254,9 +256,18 @@ export default function Orders() {
                       </div>
                    </div>
 
-                   <div className="pt-2 px-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Grand Total</p>
-                      <p className="text-xl font-black text-emerald-600">{formatPrice(order.total_amount)}</p>
+                   <div className="pt-2 px-2 flex items-end justify-between gap-3">
+                      <div>
+                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Grand Total</p>
+                         <p className="text-xl font-black text-emerald-600">{formatPrice(order.total_amount)}</p>
+                      </div>
+                      <Link
+                         to={`/admin/orders/${order.id}/invoice`}
+                         target="_blank"
+                         className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-black active:scale-95 transition-all flex-shrink-0"
+                      >
+                         <FileText className="w-3.5 h-3.5" /> Invoice
+                      </Link>
                    </div>
                 </div>
               </div>

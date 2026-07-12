@@ -36,6 +36,7 @@ import Banners from './pages/admin/Banners';
 import Chat from './pages/admin/Chat';
 import Users from './pages/admin/Users';
 import Vouchers from './pages/admin/Vouchers';
+import InvoiceView from './pages/admin/InvoiceView';
 
 function App() {
   return (
@@ -84,6 +85,9 @@ function App() {
               <Route path="users" element={<Users />} />
               <Route path="vouchers" element={<Vouchers />} />
             </Route>
+
+            {/* Standalone invoice view — no AdminLayout chrome, cleaner to print */}
+            <Route path="/admin/orders/:id/invoice" element={<ProtectedRoute><InvoiceView /></ProtectedRoute>} />
 
             {/* Catch-all 404 Page */}
             <Route path="*" element={<NotFound />} />
