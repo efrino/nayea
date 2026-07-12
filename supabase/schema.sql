@@ -818,3 +818,30 @@ end;
 $$ language plpgsql;
 
 alter publication supabase_realtime add table notifications;
+
+-- ==============================================================================
+-- 10. ADMIN DOCUMENT BOOKMARKS
+-- Bookmarks to Google Drive files (financial reports, research, etc.) opened
+-- via the Documents page. We only ever store the link + metadata here — the
+-- actual file stays live in Drive, access is gated by Drive's own sharing
+-- (whoever clicks the link needs their Google account already shared on the
+-- file), not by anything we control server-side.
+-- ==============================================================================
+
+create table if not exists admin_documents (
+  id uuid default uuid_generate_v4() primary key,
+  title text not null,
+  url text not null,
+  icon_url text,
+  mime_type text,
+  added_by uuid references auth.users(id) on delete set null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table admin_documents enable row level security;
+
+drop policy if exists "Staff can manage admin documents" on admin_documents;
+create policy "Staff can manage admin documents"
+on admin_documents for all
+using (public.is_staff())
+with check (public.is_staff());

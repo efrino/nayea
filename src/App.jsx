@@ -43,6 +43,7 @@ const Banners = lazy(() => import('./pages/admin/Banners'));
 const Chat = lazy(() => import('./pages/admin/Chat'));
 const Users = lazy(() => import('./pages/admin/Users'));
 const Vouchers = lazy(() => import('./pages/admin/Vouchers'));
+const Documents = lazy(() => import('./pages/admin/Documents'));
 const InvoiceView = lazy(() => import('./pages/admin/InvoiceView'));
 
 function RouteLoading() {
@@ -100,6 +101,7 @@ function App() {
                 <Route path="chat" element={<Chat />} />
                 <Route path="users" element={<Users />} />
                 <Route path="vouchers" element={<Vouchers />} />
+                <Route path="documents" element={<Documents />} />
               </Route>
 
               {/* Standalone invoice view — no AdminLayout chrome, cleaner to print */}

@@ -147,4 +147,48 @@ export async function pickFilesFromDrive({ multiple = true } = {}) {
   });
 }
 
+/**
+ * Opens the Drive picker across all file types (Docs, Sheets, Slides, PDFs,
+ * images, etc.) and resolves to link metadata only — no download. Meant for
+ * bookmarking reference documents (financial reports, research) that should
+ * stay live in Google Docs/Sheets rather than become a stale local copy.
+ * Resolves to [] if the admin cancels the picker.
+ */
+export async function pickDriveDocumentLinks({ multiple = true } = {}) {
+  await ensureGoogleScripts();
+  const accessToken = await getAccessToken();
+
+  return new Promise((resolve) => {
+    const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
+      .setIncludeFolders(true)
+      .setSelectFolderEnabled(false);
+
+    if (FOLDER_ID) {
+      view.setParent(FOLDER_ID);
+    }
+
+    const pickerBuilder = new window.google.picker.PickerBuilder()
+      .addView(view)
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(API_KEY)
+      .setCallback((data) => {
+        if (data.action !== window.google.picker.Action.PICKED) {
+          resolve([]);
+          return;
+        }
+        const docs = (data.docs || []).map((doc) => ({
+          title: doc.name,
+          url: doc.url,
+          icon_url: doc.iconUrl,
+          mime_type: doc.mimeType,
+        }));
+        resolve(docs);
+      });
+
+    if (multiple) pickerBuilder.enableFeature(window.google.picker.Feature.MULTISELECT_ENABLED);
+
+    pickerBuilder.build().setVisible(true);
+  });
+}
+
 export const isGoogleDriveConfigured = Boolean(CLIENT_ID && API_KEY);

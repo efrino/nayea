@@ -758,3 +758,25 @@ export async function markAllNotificationsRead() {
   const { error } = await supabase.rpc("mark_all_notifications_read");
   return { error };
 }
+
+// ==========================================
+// ADMIN DOCUMENT BOOKMARKS (Google Drive links)
+// ==========================================
+
+export async function getDocuments() {
+  const { data, error } = await supabase
+    .from("admin_documents")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return { data, error };
+}
+
+export async function createDocuments(docs) {
+  const { data, error } = await supabase.from("admin_documents").insert(docs).select();
+  return { data, error };
+}
+
+export async function deleteDocument(id) {
+  const { error } = await supabase.from("admin_documents").delete().eq("id", id);
+  return { error };
+}
