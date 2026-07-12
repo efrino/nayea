@@ -112,7 +112,8 @@ export async function pickFilesFromDrive({ multiple = true } = {}) {
 
   return new Promise((resolve, reject) => {
     const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS_IMAGES_AND_VIDEOS)
-      .setIncludeFolders(false);
+      .setIncludeFolders(true)
+      .setSelectFolderEnabled(false);
 
     if (FOLDER_ID) {
       view.setParent(FOLDER_ID);
