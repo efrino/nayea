@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Upload, Video, Image, ExternalLink, Eye, EyeOff, Layers, Cloud } from 'lucide-react';
-import { getBanners, createBanner, updateBanner, deleteBanner, uploadFile } from '../../services/api';
+import { getBanners, createBanner, updateBanner, deleteBanner, uploadFile, deleteStorageFiles } from '../../services/api';
 import { pickFilesFromDrive } from '../../lib/googleDrivePicker';
 
 const isVideoUrl = (url) => {
@@ -25,6 +25,9 @@ export default function Banners() {
     link_url: '',
     active: true
   });
+  // Image the banner had when the modal opened — lets us clean up the old
+  // file from Storage once a replacement is actually saved, not on cancel.
+  const [originalImageUrl, setOriginalImageUrl] = useState('');
 
   const getSmartHref = (urlStr) => {
     if (!urlStr) return '#';
@@ -57,8 +60,10 @@ export default function Banners() {
         link_url: banner.link_url || '',
         active: banner.active
       });
+      setOriginalImageUrl(banner.image_url || '');
     } else {
       setFormData({ id: null, title: '', description: '', tag_label: '', image_url: '', link_url: '', active: true });
+      setOriginalImageUrl('');
     }
     setIsModalOpen(true);
   };
@@ -132,6 +137,9 @@ export default function Banners() {
     if (formData.id) {
       const { error } = await updateBanner(formData.id, payload);
       if (error) alert("Gagal memperbarui banner: " + error.message);
+      else if (originalImageUrl && originalImageUrl !== payload.image_url) {
+        deleteStorageFiles([originalImageUrl], 'banners');
+      }
     } else {
       const { error } = await createBanner(payload);
       if (error) alert("Gagal menambah banner: " + error.message);

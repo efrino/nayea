@@ -75,6 +75,30 @@ export async function uploadFile(file, bucket = "products") {
 }
 
 // ==========================================
+// STORAGE CLEANUP HELPERS
+// Keeps Supabase Storage from growing unbounded with orphaned files that no
+// product/banner references anymore (deleted records, replaced images).
+// ==========================================
+
+function extractStoragePath(url, bucket) {
+  if (!url) return null;
+  const marker = `/object/public/${bucket}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length));
+}
+
+export async function deleteStorageFiles(urls, bucket) {
+  const paths = [...new Set(urls.filter(Boolean))]
+    .map((url) => extractStoragePath(url, bucket))
+    .filter(Boolean);
+  if (paths.length === 0) return { error: null };
+  const { error } = await supabase.storage.from(bucket).remove(paths);
+  if (error) console.error(`Gagal menghapus file storage di bucket "${bucket}":`, error);
+  return { error };
+}
+
+// ==========================================
 // PRODUCT SERVICES
 // ==========================================
 
@@ -109,7 +133,21 @@ export async function updateProduct(id, updates) {
 }
 
 export async function deleteProduct(id) {
+  const { data: product } = await supabase
+    .from("products")
+    .select("images, video_url")
+    .eq("id", id)
+    .single();
+
   const { error } = await supabase.from("products").delete().eq("id", id);
+
+  // Only clean up storage once the row is actually gone — if delete failed
+  // (e.g. FK restrict because the product has order history), the record
+  // still exists and still needs its media.
+  if (!error && product) {
+    const urls = [...(product.images || []), product.video_url].filter(Boolean);
+    deleteStorageFiles(urls, "products");
+  }
 
   return { error };
 }
@@ -432,7 +470,18 @@ export async function updateBanner(id, updates) {
 }
 
 export async function deleteBanner(id) {
+  const { data: banner } = await supabase
+    .from("banners")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+
   const { error } = await supabase.from("banners").delete().eq("id", id);
+
+  if (!error && banner?.image_url) {
+    deleteStorageFiles([banner.image_url], "banners");
+  }
+
   return { error };
 }
 

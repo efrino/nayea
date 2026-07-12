@@ -19,7 +19,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile } from '../../services/api';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadFile, deleteStorageFiles } from '../../services/api';
 import { pickFilesFromDrive } from '../../lib/googleDrivePicker';
 
 export default function Products() {
@@ -46,6 +46,11 @@ export default function Products() {
   const [isCompressingVideo, setIsCompressingVideo] = useState(false);
   const [compressionProgress, setCompressionProgress] = useState(0);
   const [isImportingDrive, setIsImportingDrive] = useState(false);
+  // Snapshot of media the product had when the modal opened, so on save we
+  // can tell which images/video got swapped out and clean those up from
+  // Storage — only after the save actually succeeds, never on cancel.
+  const [originalImages, setOriginalImages] = useState([]);
+  const [originalVideoUrl, setOriginalVideoUrl] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -165,6 +170,8 @@ export default function Products() {
       let existingImages = product.images && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : []);
       setMediaItems(existingImages.map(url => ({ isNew: false, url, file: null })));
       setVideoFile(null);
+      setOriginalImages(existingImages);
+      setOriginalVideoUrl(product.video_url || '');
     } else {
       setEditId(null);
       setName('');
@@ -178,6 +185,8 @@ export default function Products() {
       setColors([]);
       setMediaItems([]);
       setVideoFile(null);
+      setOriginalImages([]);
+      setOriginalVideoUrl('');
     }
     setNewColor('');
     setIsModalOpen(true);
@@ -236,6 +245,16 @@ export default function Products() {
       }
 
       if (error) throw error;
+
+      // Clean up storage for any old image/video this edit dropped or
+      // replaced — only now that the save actually succeeded.
+      if (editId) {
+        const finalVideoUrl = productData.video_url;
+        const droppedImages = originalImages.filter(url => !finalImageArray.includes(url));
+        const droppedVideo = originalVideoUrl && originalVideoUrl !== finalVideoUrl ? [originalVideoUrl] : [];
+        const toRemove = [...droppedImages, ...droppedVideo];
+        if (toRemove.length > 0) deleteStorageFiles(toRemove, 'products');
+      }
       closeModal();
       fetchProducts();
     } catch (error) {
