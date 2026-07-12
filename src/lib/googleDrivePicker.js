@@ -4,6 +4,8 @@
 // only ever used as a file *source*, never as the final hosting location
 // (drive.google.com links are unreliable/rate-limited for hotlinking).
 
+import { supabase } from './supabase';
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 // Optional: restrict the picker to a single Drive folder (e.g. a shared
@@ -56,14 +58,21 @@ async function ensureGoogleScripts() {
   }
 }
 
-function getAccessToken() {
+async function getAccessToken() {
   if (cachedAccessToken && Date.now() < tokenExpiresAt) {
-    return Promise.resolve(cachedAccessToken);
+    return cachedAccessToken;
   }
+
+  // Hint Google towards the same email the admin is logged into Nayea with,
+  // so the account picker pre-selects it instead of showing a blank chooser.
+  const { data } = await supabase.auth.getSession();
+  const hint = data?.session?.user?.email || undefined;
+
   return new Promise((resolve, reject) => {
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPE,
+      hint,
       callback: (response) => {
         if (response.error) {
           reject(new Error(`Otorisasi Google Drive gagal: ${response.error}`));
