@@ -99,6 +99,17 @@ create table if not exists addresses (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Table: reviews (product ratings + comments, one per customer per product)
+create table if not exists reviews (
+  id uuid default uuid_generate_v4() primary key,
+  product_id uuid references products(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  rating integer not null check (rating between 1 and 5),
+  comment text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(user_id, product_id)
+);
+
 -- Table: banners
 create table if not exists banners (
   id uuid default uuid_generate_v4() primary key,
@@ -189,7 +200,42 @@ on addresses for all
 using (auth.role() = 'authenticated' AND user_id = auth.uid())
 with check (auth.role() = 'authenticated' AND user_id = auth.uid());
 
--- 2. ORDERS & ORDER_ITEMS TABLE POLICIES 
+-- 1.7 REVIEWS POLICIES
+alter table reviews enable row level security;
+
+drop policy if exists "Public can view reviews" on reviews;
+create policy "Public can view reviews"
+on reviews for select
+using (true);
+
+-- Only customers with a paid/shipped order containing this product may
+-- review it — prevents drive-by reviews with no purchase.
+drop policy if exists "Verified buyers can insert their own review" on reviews;
+create policy "Verified buyers can insert their own review"
+on reviews for insert
+with check (
+  auth.role() = 'authenticated' AND user_id = auth.uid() AND
+  exists (
+    select 1 from order_items oi
+    join orders o on o.id = oi.order_id
+    where oi.product_id = reviews.product_id
+      and o.user_id = auth.uid()
+      and o.status in ('paid', 'shipped')
+  )
+);
+
+drop policy if exists "Users can update their own review" on reviews;
+create policy "Users can update their own review"
+on reviews for update
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists "Users or staff can delete reviews" on reviews;
+create policy "Users or staff can delete reviews"
+on reviews for delete
+using (user_id = auth.uid() OR public.is_staff());
+
+-- 2. ORDERS & ORDER_ITEMS TABLE POLICIES
 alter table orders enable row level security;
 alter table order_items enable row level security;
 
@@ -463,6 +509,34 @@ as $$
   from public.messages m
   left join auth.users u on m.user_id = u.id
   order by m.created_at asc;
+$$;
+
+-- Function to fetch a product's reviews joined with the reviewer's display name
+create or replace function public.get_product_reviews(p_product_id uuid)
+returns table (
+  id uuid,
+  product_id uuid,
+  user_id uuid,
+  rating integer,
+  comment text,
+  created_at timestamp with time zone,
+  reviewer_name text
+)
+language sql
+security definer
+as $$
+  select
+    r.id,
+    r.product_id,
+    r.user_id,
+    r.rating,
+    r.comment,
+    r.created_at,
+    coalesce(u.raw_user_meta_data->>'full_name', 'Pelanggan Nayea') as reviewer_name
+  from public.reviews r
+  left join auth.users u on r.user_id = u.id
+  where r.product_id = p_product_id
+  order by r.created_at desc;
 $$;
 
 -- ==============================================================================

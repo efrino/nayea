@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, Truck, ShieldCheck, CheckCircle, Heart, PlayCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Truck, ShieldCheck, CheckCircle, Heart, PlayCircle, Star, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { addToCart, toggleWishlist, getWishlists } from '../../services/api';
+import { isStaff } from '../../lib/roles';
+import {
+  addToCart,
+  toggleWishlist,
+  getWishlists,
+  getProductReviews,
+  canReviewProduct,
+  createReview,
+  deleteReview,
+} from '../../services/api';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -22,6 +31,74 @@ export default function ProductDetail() {
 
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const fetchReviews = async () => {
+    setLoadingReviews(true);
+    const { data } = await getProductReviews(id);
+    setReviews(data || []);
+    setLoadingReviews(false);
+  };
+
+  useEffect(() => {
+    fetchReviews();
+    async function checkEligibility() {
+      if (!user) {
+        setCanReview(false);
+        return;
+      }
+      const { data } = await canReviewProduct(user.id, id);
+      setCanReview(!!data);
+    }
+    checkEligibility();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user]);
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      openLoginModal(() => handleSubmitReview(e), 'review');
+      return;
+    }
+    if (reviewForm.rating < 1) {
+      alert('Harap pilih rating bintang terlebih dahulu.');
+      return;
+    }
+    setSubmittingReview(true);
+    const { error } = await createReview({
+      product_id: id,
+      user_id: user.id,
+      rating: reviewForm.rating,
+      comment: reviewForm.comment.trim() || null,
+    });
+    setSubmittingReview(false);
+    if (error) {
+      alert('Gagal mengirim ulasan: ' + error.message);
+      return;
+    }
+    setReviewForm({ rating: 0, comment: '' });
+    setCanReview(false);
+    fetchReviews();
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Hapus ulasan ini?')) return;
+    const { error } = await deleteReview(reviewId);
+    if (error) {
+      alert('Gagal menghapus ulasan: ' + error.message);
+      return;
+    }
+    fetchReviews();
+  };
+
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
 
   useEffect(() => {
     async function fetchProduct() {
@@ -220,6 +297,18 @@ export default function ProductDetail() {
                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Nayea Selection</span>
                <h1 className="text-4xl sm:text-6xl font-black font-heading text-gray-900 tracking-tighter italic uppercase leading-tight mb-4">{product.name}</h1>
 
+               {reviews.length > 0 && (
+                 <div className="flex items-center gap-2 mb-6">
+                   <div className="flex items-center">
+                     {[1, 2, 3, 4, 5].map((n) => (
+                       <Star key={n} className={`w-4 h-4 ${n <= Math.round(averageRating) ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} />
+                     ))}
+                   </div>
+                   <span className="text-xs font-black text-gray-900">{averageRating.toFixed(1)}</span>
+                   <span className="text-xs font-medium text-gray-400">({reviews.length} ulasan)</span>
+                 </div>
+               )}
+
                <div className="flex items-center justify-between mb-10 pb-10 border-b border-gray-50">
                  <div className="flex flex-col">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price Value</span>
@@ -339,6 +428,88 @@ export default function ProductDetail() {
             </div>
 
           </div>
+        </div>
+
+        {/* Reviews */}
+        <div className="mt-20 pt-16 border-t border-gray-50 max-w-3xl">
+          <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">Customer Voices</span>
+          <h2 className="text-3xl sm:text-4xl font-black font-heading text-gray-900 tracking-tighter italic uppercase mb-10">
+            {reviews.length > 0 ? `${reviews.length} ULASAN` : 'ULASAN PRODUK'}
+          </h2>
+
+          {canReview && (
+            <form onSubmit={handleSubmitReview} className="mb-12 p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest italic mb-4">Bagikan Pendapatmu</h3>
+              <div className="flex items-center gap-2 mb-5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setReviewForm((prev) => ({ ...prev, rating: n }))}
+                    className="active:scale-90 transition-transform"
+                  >
+                    <Star className={`w-7 h-7 ${n <= reviewForm.rating ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                rows={3}
+                value={reviewForm.comment}
+                onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
+                placeholder="Ceritakan pengalamanmu dengan produk ini (opsional)..."
+                className="w-full px-6 py-4 rounded-[1.5rem] bg-white border border-gray-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-medium transition-all resize-none mb-5"
+              />
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="px-8 py-4 gradient-primary text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+              >
+                {submittingReview ? 'MENGIRIM...' : 'KIRIM ULASAN'}
+              </button>
+            </form>
+          )}
+
+          {loadingReviews ? (
+            <div className="flex justify-center py-16">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : reviews.length === 0 ? (
+            <p className="text-sm text-gray-400 font-medium italic">Belum ada ulasan untuk produk ini. Jadilah yang pertama!</p>
+          ) : (
+            <div className="space-y-8">
+              {reviews.map((review) => (
+                <div key={review.id} className="pb-8 border-b border-gray-50 last:border-0">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">{review.reviewer_name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} />
+                          ))}
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          {new Date(review.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                    {(review.user_id === user?.id || isStaff(user?.user_metadata?.role)) && (
+                      <button
+                        onClick={() => handleDeleteReview(review.id)}
+                        className="p-2 text-gray-300 hover:text-rose-500 transition-colors flex-shrink-0"
+                        title="Hapus ulasan"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-gray-500 font-medium leading-relaxed mt-2">{review.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

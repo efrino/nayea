@@ -572,3 +572,71 @@ export async function setUserRole(userId, role) {
   });
   return { data: data?.user || null, error };
 }
+
+// ==========================================
+// PRODUCT REVIEW SERVICES
+// ==========================================
+
+export async function getProductReviews(productId) {
+  const { data, error } = await supabase.rpc("get_product_reviews", {
+    p_product_id: productId,
+  });
+  return { data: data || [], error };
+}
+
+/**
+ * A customer can review a product only once, and only if they have a
+ * paid/shipped order that includes it (mirrors the "verified buyer" RLS
+ * check on insert — this is just for deciding whether to show the form).
+ */
+export async function canReviewProduct(userId, productId) {
+  if (!userId) return { data: false, error: null };
+
+  const { data: existing } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("product_id", productId)
+    .maybeSingle();
+
+  if (existing) return { data: false, error: null };
+
+  const { data: purchases, error } = await supabase
+    .from("order_items")
+    .select("id, orders!inner(status, user_id)")
+    .eq("product_id", productId);
+
+  if (error) return { data: false, error };
+
+  const hasVerifiedPurchase = (purchases || []).some(
+    (item) =>
+      item.orders?.user_id === userId &&
+      ["paid", "shipped"].includes(item.orders?.status)
+  );
+
+  return { data: hasVerifiedPurchase, error: null };
+}
+
+export async function createReview(reviewData) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .insert([reviewData])
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function updateReview(id, reviewData) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .update(reviewData)
+    .eq("id", id)
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function deleteReview(id) {
+  const { error } = await supabase.from("reviews").delete().eq("id", id);
+  return { error };
+}
