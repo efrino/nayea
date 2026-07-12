@@ -90,6 +90,38 @@ async function getAccessToken() {
   });
 }
 
+const SHORTCUT_MIME_TYPE = 'application/vnd.google-apps.shortcut';
+
+// Picker can return a Drive *shortcut* (a pointer, no content of its own)
+// instead of the real file — happens a lot for items surfaced from a
+// shared folder. A shortcut's own ID 404s on every download attempt no
+// matter what headers/params are added, so resolve it to its real target
+// first. shortcutDetails conveniently carries the target's resourceKey too.
+async function resolveShortcut(doc, accessToken) {
+  if (doc.mimeType !== SHORTCUT_MIME_TYPE) {
+    return { id: doc.id, name: doc.name, mimeType: doc.mimeType, resourceKey: doc.resourceKey };
+  }
+
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${doc.id}?fields=shortcutDetails&supportsAllDrives=true`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) {
+    throw new Error(`Gagal membaca shortcut "${doc.name}" (HTTP ${res.status}).`);
+  }
+  const meta = await res.json();
+  const targetId = meta.shortcutDetails?.targetId;
+  if (!targetId) {
+    throw new Error(`Shortcut "${doc.name}" tidak mengarah ke file manapun.`);
+  }
+  return {
+    id: targetId,
+    name: doc.name,
+    mimeType: meta.shortcutDetails?.targetMimeType || doc.mimeType,
+    resourceKey: meta.shortcutDetails?.targetResourceKey,
+  };
+}
+
 async function downloadDriveFile(fileId, accessToken, fileName, mimeType, resourceKey) {
   const headers = { Authorization: `Bearer ${accessToken}` };
   // Files living in a folder shared with the admin (rather than owned by
@@ -143,8 +175,9 @@ export async function pickFilesFromDrive({ multiple = true } = {}) {
 
         try {
           const docs = data.docs || [];
+          const resolved = await Promise.all(docs.map((doc) => resolveShortcut(doc, accessToken)));
           const files = await Promise.all(
-            docs.map((doc) => downloadDriveFile(doc.id, accessToken, doc.name, doc.mimeType, doc.resourceKey))
+            resolved.map((doc) => downloadDriveFile(doc.id, accessToken, doc.name, doc.mimeType, doc.resourceKey))
           );
           resolve(files);
         } catch (err) {
