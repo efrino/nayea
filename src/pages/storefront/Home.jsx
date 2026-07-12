@@ -151,7 +151,7 @@ export default function Home() {
                         );
                       }
                       return (
-                        <Link to={url} className={`${commonClasses} gradient-primary text-white hover:shadow-primary/30`}>
+                        <Link to={url} className={`${commonClasses} gradient-accent text-primary hover:shadow-accent/30`}>
                           Shop The Look <ArrowRight className="ml-3 w-5 h-5" />
                         </Link>
                       );
@@ -171,7 +171,7 @@ export default function Home() {
                   Premium quality kerudung and modest fashion, curated for the modern woman.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-left duration-700 delay-300">
-                  <Link to="/catalog" className="inline-flex items-center justify-center px-10 py-5 rounded-[1.8rem] text-[12px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl gradient-primary text-white hover:shadow-primary/30">
+                  <Link to="/catalog" className="inline-flex items-center justify-center px-10 py-5 rounded-[1.8rem] text-[12px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl gradient-accent text-primary hover:shadow-accent/30">
                     Shop The Look <ArrowRight className="ml-3 w-5 h-5" />
                   </Link>
                 </div>
