@@ -226,6 +226,7 @@ export default function Home() {
                     <img
                       src={product.image_url || 'https://via.placeholder.com/400x400?text=No+Image'}
                       alt={product.name}
+                      loading="lazy"
                       className="h-full w-full object-cover object-center group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
