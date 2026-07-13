@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Search, Menu, ShoppingBag, User, LogOut, Heart, X } from 'lucide-react';
+import { Search, Menu, ShoppingBag, User, LogOut, Heart, X, Settings, Package, ChevronDown } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { getWishlists } from '../../services/api';
@@ -13,6 +13,7 @@ export default function Navbar() {
   const cartCount = getCartCount();
   const [wishlistCount, setWishlistCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function fetchWishlists() {
@@ -78,14 +79,64 @@ export default function Navbar() {
 
             {/* Customer Authentication (Desktop) */}
             {user ? (
-              <div className="hidden md:flex items-center gap-4 ml-4 pl-4 border-l border-oat">
-                <Link to="/profile" className="flex flex-col items-end group">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-tighter italic group-hover:text-primary transition-colors">{user.user_metadata?.full_name || 'Customer'}</span>
-                  <span className="text-[8px] font-bold text-secondary uppercase tracking-[0.1em]">Verified Account</span>
-                </Link>
-                <button onClick={logout} className="p-2.5 bg-cream text-secondary hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all" title="Logout">
-                  <LogOut className="w-4 h-4" />
+              <div className="hidden md:block relative ml-4 pl-4 border-l border-oat">
+                <button
+                  onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-3 group"
+                >
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-tighter italic group-hover:text-primary transition-colors">{user.user_metadata?.full_name || 'Customer'}</span>
+                    <span className="text-[8px] font-bold text-secondary uppercase tracking-[0.1em]">Verified Account</span>
+                  </div>
+                  {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                    <img
+                      src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                      alt={user.user_metadata?.full_name || 'Profile'}
+                      className="w-10 h-10 rounded-2xl object-cover border border-oat shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
+                      {(user.user_metadata?.full_name || user.email || 'C').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <ChevronDown className={`w-3.5 h-3.5 text-secondary transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
+
+                {isProfileMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsProfileMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-3 w-64 bg-white rounded-[1.5rem] shadow-2xl border border-oat overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="px-6 py-5 border-b border-cream">
+                        <p className="text-sm font-black text-primary truncate">{user.user_metadata?.full_name || 'Customer'}</p>
+                        <p className="text-[11px] text-secondary font-medium truncate mt-0.5">{user.email}</p>
+                      </div>
+                      <div className="py-2">
+                        <Link
+                          to="/profile?tab=account"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-6 py-3 text-xs font-bold text-secondary hover:bg-cream hover:text-primary transition-all"
+                        >
+                          <Settings className="w-4 h-4" /> Pengaturan Akun
+                        </Link>
+                        <Link
+                          to="/profile?tab=orders"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-6 py-3 text-xs font-bold text-secondary hover:bg-cream hover:text-primary transition-all"
+                        >
+                          <Package className="w-4 h-4" /> Riwayat Pesanan
+                        </Link>
+                      </div>
+                      <div className="py-2 border-t border-cream">
+                        <button
+                          onClick={() => { logout(); setIsProfileMenuOpen(false); }}
+                          className="w-full flex items-center gap-3 px-6 py-3 text-xs font-bold text-rose-500 hover:bg-rose-50 transition-all"
+                        >
+                          <LogOut className="w-4 h-4" /> Keluar
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-oat">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   User,
   Package,
@@ -37,9 +37,20 @@ const TABS = [
   { key: 'addresses', label: 'Alamat Tersimpan', icon: MapPin },
 ];
 
+const VALID_TABS = TABS.map((t) => t.key);
+
 export default function Profile() {
   const { user, openLoginModal, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('account');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(VALID_TABS.includes(initialTab) ? initialTab : 'account');
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', key);
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     if (!user) openLoginModal(null, 'profil');
@@ -86,7 +97,7 @@ export default function Profile() {
                 return (
                   <button
                     key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
+                    onClick={() => handleTabChange(tab.key)}
                     className={`w-full flex items-center gap-3 px-5 py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${
                       isActive ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-secondary hover:bg-cream hover:text-primary'
                     }`}
